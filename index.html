@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dikey Chat - Ứng dụng chat trực tuyến</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+    <div class="app-container">
+        <!-- Màn hình đăng nhập -->
+        <div id="login-screen" class="screen active">
+            <div class="login-container">
+                <div class="logo">
+                    <img src="images/logo.svg" alt="Dikey Chat Logo">
+                    <h1>Dikey Chat</h1>
+                </div>
+                <p class="welcome-text">Chào mừng đến với ứng dụng chat trực tuyến</p>
+                <button id="google-login" class="login-button">
+                    <i class="fab fa-google"></i> Đăng nhập với Google
+                </button>
+            </div>
+        </div>
+
+        <!-- Màn hình chính -->
+        <div id="main-screen" class="screen">
+            <!-- Sidebar -->
+            <div class="sidebar">
+                <div class="sidebar-header">
+                    <div class="user-profile">
+                        <img id="user-avatar" src="images/default-avatar.svg" alt="Avatar">
+                        <div class="user-info">
+                            <h3 id="user-name">Tên người dùng</h3>
+                            <p id="user-status">Online</p>
+                        </div>
+                    </div>
+                    <div class="sidebar-actions">
+                        <button id="create-group" title="Tạo nhóm mới">
+                            <i class="fas fa-users-cog"></i>
+                        </button>
+                        <button id="logout-button" title="Đăng xuất">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="search-container">
+                    <div class="search-box">
+                        <i class="fas fa-search"></i>
+                        <input type="text" id="search-input" placeholder="Tìm kiếm...">
+                    </div>
+                </div>
+                
+                <div class="tabs">
+                    <button class="tab-button active" data-tab="chats">Trò chuyện</button>
+                    <button class="tab-button" data-tab="users">Người dùng</button>
+                </div>
+                
+                <div class="tab-content">
+                    <div id="chats-tab" class="tab-pane active">
+                        <div class="chat-list" id="chat-list">
+                            <!-- Danh sách chat sẽ được thêm vào đây bằng JavaScript -->
+                        </div>
+                    </div>
+                    <div id="users-tab" class="tab-pane">
+                        <div class="user-list" id="user-list">
+                            <!-- Danh sách người dùng sẽ được thêm vào đây bằng JavaScript -->
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Nút quay lại cho thiết bị di động -->
+            <button class="back-button hidden" id="back-button">
+                <i class="fas fa-arrow-left"></i>
+            </button>
+
+            <!-- Khu vực chat chính -->
+            <div class="chat-area">
+                <div class="empty-chat-placeholder" id="empty-chat">
+                    <img src="images/chat-placeholder.svg" alt="Chọn một cuộc trò chuyện">
+                    <h2>Chọn một cuộc trò chuyện để bắt đầu</h2>
+                </div>
+                
+                <div class="chat-container" id="chat-container">
+                    <div class="chat-header">
+                        <div class="chat-info">
+                            <img id="current-chat-avatar" src="images/default-avatar.svg" alt="Avatar">
+                            <div>
+                                <h3 id="current-chat-name">Tên cuộc trò chuyện</h3>
+                                <p id="current-chat-status">Trạng thái</p>
+                            </div>
+                        </div>
+                        <div class="chat-actions">
+                            <button id="chat-info-button" title="Thông tin">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div class="messages-container" id="messages-container">
+                        <!-- Tin nhắn sẽ được thêm vào đây bằng JavaScript -->
+                    </div>
+                    
+                    <div class="message-input-container">
+                        <button id="attach-button" title="Đính kèm file">
+                            <i class="fas fa-paperclip"></i>
+                        </button>
+                        <input type="file" id="file-input" accept="image/*" style="display: none;">
+                        <div class="message-input">
+                            <input type="text" id="message-text" placeholder="Nhập tin nhắn...">
+                            <button id="emoji-button" title="Chèn emoji">
+                                <i class="far fa-smile"></i>
+                            </button>
+                        </div>
+                        <button id="send-button" title="Gửi tin nhắn">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Sidebar thông tin (ẩn mặc định) -->
+            <div class="info-sidebar" id="info-sidebar">
+                <div class="info-header">
+                    <h3>Thông tin</h3>
+                    <button id="close-info" title="Đóng">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="info-content" id="info-content">
+                    <!-- Thông tin sẽ được thêm vào đây bằng JavaScript -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Modal tạo nhóm -->
+        <div id="create-group-modal" class="modal">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h3>Tạo nhóm mới</h3>
+                    <button class="close-modal">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="group-name">Tên nhóm:</label>
+                        <input type="text" id="group-name" placeholder="Nhập tên nhóm...">
+                    </div>
+                    <div class="form-group">
+                        <label>Chọn icon nhóm:</label>
+                        <div class="group-icon-selection">
+                            <div class="group-icon-option custom-upload selected" data-icon="custom">
+                                <div class="upload-placeholder">
+                                    <i class="fas fa-upload"></i>
+                                </div>
+                                <span>Tải lên ảnh nhóm</span>
+                                <input type="file" id="group-icon-upload" accept="image/*" style="display: none;">
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label>Chọn thành viên:</label>
+                        <div class="user-selection" id="user-selection">
+                            <!-- Danh sách người dùng sẽ được thêm vào đây bằng JavaScript -->
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="create-group-button" class="primary-button">Tạo nhóm</button>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Emoji picker -->
+        <div id="emoji-picker" class="emoji-picker">
+            <div class="emoji-container" id="emoji-container">
+                <!-- Emoji sẽ được thêm vào đây bằng JavaScript -->
+            </div>
+        </div>
+    </div>
+
+    <!-- Thông báo toast -->
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Scripts -->
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+    <script src="https://unpkg.com/cloudinary-core@latest/cloudinary-core-shrinkwrap.min.js"></script>
+    <script>
+        console.log('Bắt đầu tải các file JavaScript');
+    </script>
+    <script src="js/config.js"></script>
+    <script>
+        console.log('Đã tải config.js, emojiList có sẵn:', typeof emojiList !== 'undefined');
+    </script>
+    <script src="js/auth.js"></script>
+    <script>
+        console.log('Đã tải auth.js');
+    </script>
+    <script src="js/chat.js"></script>
+    <script>
+        console.log('Đã tải chat.js');
+    </script>
+    <script src="js/ui.js"></script>
+    <script>
+        console.log('Đã tải ui.js, ui có sẵn:', typeof ui !== 'undefined');
+    </script>
+    <script src="js/app.js"></script>
+    <script>
+        console.log('Đã tải app.js');
+    </script>
+</body>
+</html>
