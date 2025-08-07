@@ -12,6 +12,11 @@ document.addEventListener('DOMContentLoaded', () => {
         authManager.logout();
     });
     
+    // Thiết lập sự kiện cho nút cài đặt thông báo email
+    document.getElementById('email-notification-button').addEventListener('click', () => {
+        emailNotification.showSettingsModal();
+    });
+    
     // Thiết lập sự kiện khi người dùng nhấp vào avatar của họ trong sidebar
     document.getElementById('user-avatar').addEventListener('click', () => {
         const currentUser = authManager.getCurrentUser();

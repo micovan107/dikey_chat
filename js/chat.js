@@ -1029,6 +1029,11 @@ class Chat {
                 
                 // Cập nhật thời gian hoạt động cuối cùng của chat
                 dbRefs.chats.child(`${this.currentChatId}/lastActivity`).set(firebase.database.ServerValue.TIMESTAMP);
+                
+                // Gửi thông báo email
+                if (this.chats[this.currentChatId]) {
+                    emailNotification.sendNotification(newMessage, this.chats[this.currentChatId], currentUser);
+                }
             })
             .catch(error => {
                 console.error('Lỗi khi gửi tin nhắn:', error);
@@ -1120,6 +1125,11 @@ class Chat {
             .then(() => {
                 // Cập nhật thời gian hoạt động cuối cùng của chat
                 dbRefs.chats.child(`${this.currentChatId}/lastActivity`).set(firebase.database.ServerValue.TIMESTAMP);
+                
+                // Gửi thông báo email
+                if (this.chats[this.currentChatId]) {
+                    emailNotification.sendNotification(newMessage, this.chats[this.currentChatId], currentUser);
+                }
             })
             .catch(error => {
                 console.error('Lỗi khi gửi tin nhắn hình ảnh:', error);
