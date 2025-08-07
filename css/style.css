@@ -1499,7 +1499,7 @@ body {
     
     .message-input-container {
         padding: 10px;
-        padding-bottom: 25px; /* Thêm padding-bottom để tránh bị thanh điều hướng của điện thoại che khuất */
+        padding-bottom: 40px; /* Tăng padding-bottom để tránh bị thanh điều hướng của điện thoại che khuất */
     }
     
     .message-input {
@@ -1522,7 +1522,7 @@ body {
     
     .messages-container {
         padding: 10px;
-        padding-bottom: 15px; /* Điều chỉnh padding-bottom để cân bằng với padding-bottom của message-input-container */
+        padding-bottom: 20px; /* Tăng padding-bottom để cân bằng với padding-bottom của message-input-container */
     }
     
     .message {
