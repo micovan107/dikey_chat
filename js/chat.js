@@ -1491,7 +1491,7 @@ class Chat {
 
     // Nếu không phải custom-upload → tạo nhóm luôn
     this.completeGroupCreation(groupId, groupName, groupIcon, members, currentUser);
-},
+}
 
 completeGroupCreation(groupId, groupName, groupIcon, members, currentUser) {
     const groupData = {
@@ -2587,4 +2587,5 @@ completeGroupCreation(groupId, groupName, groupIcon, members, currentUser) {
 // Khởi tạo đối tượng Chat
 
 const chat = new Chat();
+
 
