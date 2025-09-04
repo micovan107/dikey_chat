@@ -261,6 +261,51 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const defaultGroupId = "congdongviet";
+  const defaultGroupName = "Cộng đồng Việt";
+
+  const checkInterval = setInterval(() => {
+    if (typeof firebase !== "undefined" && typeof authManager !== "undefined") {
+      clearInterval(checkInterval);
+
+      const currentUser = authManager.getCurrentUser();
+      if (!currentUser) return;
+
+      const groupRef = firebase.database().ref("chats/" + defaultGroupId);
+
+      groupRef.once("value").then((snapshot) => {
+        if (!snapshot.exists()) {
+          // Tạo mới nhóm nếu chưa có
+          groupRef.set({
+            id: defaultGroupId,
+            name: defaultGroupName,
+            type: "group",
+            createdAt: firebase.database.ServerValue.TIMESTAMP,
+            createdBy: "system",
+            photoURL: "/images/co.png", // icon mặc định
+            members: { [currentUser.uid]: true },
+            lastActivity: firebase.database.ServerValue.TIMESTAMP
+          });
+        } else {
+          // Nếu có rồi, chỉ cần thêm user vào
+          groupRef.child("members/" + currentUser.uid).set(true);
+        }
+
+        // ⚡ Thêm nhóm này vào danh sách chat của user
+        firebase.database()
+          .ref("user_chats/" + currentUser.uid + "/" + defaultGroupId)
+          .set({
+            chatId: defaultGroupId,
+            joinedAt: firebase.database.ServerValue.TIMESTAMP
+          });
+      });
+    }
+  }, 500);
+});
+</script>
+
 
 
 
