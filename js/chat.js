@@ -1426,142 +1426,87 @@ class Chat {
     /**
      * Tạo nhóm chat mới
      */
- createGroup() {
-    const groupNameInput = document.getElementById('group-name');
-    const groupName = groupNameInput.value.trim();
-
-    if (groupName === '') {
-        ui.showToast('error', 'Lỗi', 'Vui lòng nhập tên nhóm');
-        return;
-    }
-
-    ui.showLoading();
-
-    // Lấy danh sách người dùng được chọn
-    const selectedUsers = [];
-    const checkboxes = document.querySelectorAll('#user-selection input[type="checkbox"]:checked');
-    checkboxes.forEach(checkbox => selectedUsers.push(checkbox.value));
-
-    if (selectedUsers.length === 0) {
-        ui.showToast('error', 'Lỗi', 'Vui lòng chọn ít nhất một thành viên');
-        ui.hideLoading();
-        return;
-    }
-
-    const currentUser = authManager.getCurrentUser();
-    const newGroupRef = dbRefs.chats.push();
-    const groupId = newGroupRef.key;
-
-    // Danh sách thành viên
-    const members = {};
-    members[currentUser.uid] = true;
-    selectedUsers.forEach(uid => members[uid] = true);
-
-    // Lấy icon nhóm được chọn
-    const selectedIcon = document.querySelector('.group-icon-option.selected');
-    let groupIcon = selectedIcon ? selectedIcon.getAttribute('data-icon') : '/images/co.png';
-
-    // Nếu là custom-upload thì upload lên Cloudinary trước khi tạo nhóm
-    if (groupIcon === 'custom-upload') {
-        const fileInput = document.getElementById('group-icon-upload');
-        if (fileInput && fileInput.files && fileInput.files[0]) {
-            const file = fileInput.files[0];
-            const formData = new FormData();
-            formData.append('file', file);
-            formData.append('upload_preset', cloudinaryConfig.uploadPreset);
-            formData.append('folder', 'group_icons');
-
-            fetch(`https://api.cloudinary.com/v1_1/${cloudinaryConfig.cloudName}/image/upload`, {
-                method: 'POST',
-                body: formData
-            })
-            .then(res => res.json())
-            .then(data => {
-                // Ghi đè lại data-icon để không còn là "custom-upload"
-                if (selectedIcon) selectedIcon.setAttribute('data-icon', data.secure_url);
-                this.completeGroupCreation(groupId, groupName, data.secure_url, members, currentUser);
-            })
-            .catch(err => {
-                console.error('Lỗi khi upload ảnh nhóm lên Cloudinary:', err);
-                this.completeGroupCreation(groupId, groupName, '/images/co.png', members, currentUser);
-            });
-            return; // Dừng lại ở đây, đợi upload xong
+    createGroup() {
+        const groupNameInput = document.getElementById('group-name');
+        const groupName = groupNameInput.value.trim();
+        
+        if (groupName === '') {
+            ui.showToast('error', 'Lỗi', 'Vui lòng nhập tên nhóm');
+            return;
         }
-    }
-
-    // Nếu không phải custom-upload → tạo nhóm luôn
-    this.completeGroupCreation(groupId, groupName, groupIcon, members, currentUser);
-}
-
-completeGroupCreation(groupId, groupName, groupIcon, members, currentUser) {
-    const groupData = {
-        name: groupName,
-        type: 'group',
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-        createdBy: currentUser.uid,
-        lastActivity: firebase.database.ServerValue.TIMESTAMP,
-        photoURL: groupIcon,
-        members: members
-    };
-
-    dbRefs.chats.child(groupId).set(groupData)
-    .then(() => {
-        const updates = {};
-        Object.keys(members).forEach(userId => {
-            updates[`${userId}/${groupId}`] = {
-                chatId: groupId,
-                joinedAt: firebase.database.ServerValue.TIMESTAMP
-            };
+        
+        // Hiển thị loading
+        ui.showLoading();
+        
+        // Lấy danh sách người dùng được chọn
+        const selectedUsers = [];
+        const checkboxes = document.querySelectorAll('#user-selection input[type="checkbox"]:checked');
+        
+        checkboxes.forEach(checkbox => {
+            selectedUsers.push(checkbox.value);
         });
-        return dbRefs.userChats.update(updates);
-    })
-    .then(() => {
-        const welcomeMessage = {
-            senderId: 'system',
-            senderName: 'Hệ thống',
-            text: `${currentUser.displayName} đã tạo nhóm ${groupName}`,
-            timestamp: firebase.database.ServerValue.TIMESTAMP,
-            type: 'text'
-        };
-        return dbRefs.messages.child(groupId).push(welcomeMessage);
-    })
-    .then(() => {
-        // Load lại thông tin chat từ DB để có photoURL chính xác
-        this.loadChatDetails(groupId);
-
-        // Đóng modal & reset input
-        document.getElementById('create-group-modal').classList.remove('active');
-        document.getElementById('group-name').value = '';
-
-        // Chọn nhóm vừa tạo
-        this.selectChat(groupId);
-
-        ui.showToast('success', 'Thành công', `Đã tạo nhóm ${groupName}`);
-    })
-    .catch(error => {
-        console.error('Lỗi khi tạo nhóm:', error);
-        ui.showToast('error', 'Lỗi', 'Không thể tạo nhóm');
-    })
-    .finally(() => {
-        ui.hideLoading();
-    });
-}
-
-            .catch(err => {
-                console.error('Lỗi khi upload ảnh nhóm lên Cloudinary:', err);
-                ui.hideLoading();
-                ui.showToast('error', 'Lỗi', 'Không thể upload ảnh nhóm');
-                this.completeGroupCreation(groupId, groupName, '/images/co.png', members, currentUser);
-            });
-            return; // Dừng lại, vì sẽ tiếp tục sau khi upload xong
+        
+        console.log('Tạo nhóm mới:', groupName, 'với', selectedUsers.length, 'thành viên');
+        
+        if (selectedUsers.length === 0) {
+            ui.showToast('error', 'Lỗi', 'Vui lòng chọn ít nhất một thành viên');
+            return;
         }
+        
+        // Tạo nhóm mới
+        const currentUser = authManager.getCurrentUser();
+        const newGroupRef = dbRefs.chats.push();
+        const groupId = newGroupRef.key;
+        
+        // Tạo danh sách thành viên (bao gồm cả người tạo nhóm)
+        const members = {};
+        members[currentUser.uid] = true;
+        
+        selectedUsers.forEach(userId => {
+            members[userId] = true;
+        });
+        
+        // Lấy icon nhóm đã chọn
+        const selectedIcon = document.querySelector('.group-icon-option.selected');
+        let groupIcon = selectedIcon ? selectedIcon.getAttribute('data-icon') : '/images/co.png';
+        
+        // Xử lý trường hợp icon tùy chỉnh
+        if (groupIcon === 'custom-upload') {
+            // Lấy URL của ảnh đã tải lên
+            const customImg = selectedIcon.querySelector('img');
+            if (customImg && customImg.src) {
+                // Lấy file từ input
+                const fileInput = document.getElementById('group-icon-upload');
+                if (fileInput && fileInput.files && fileInput.files[0]) {
+                    // Tải ảnh lên Firebase Storage
+                    const file = fileInput.files[0];
+                    const storageRef = firebase.storage().ref();
+                    const fileRef = storageRef.child(`group-icons/${groupId}/${file.name}`);
+                    
+                    // Tải file lên và lấy URL
+                    return fileRef.put(file).then(snapshot => {
+                        return snapshot.ref.getDownloadURL();
+                    }).then(downloadURL => {
+                        // Tiếp tục với URL đã tải lên
+                        this.completeGroupCreation(groupId, groupName, downloadURL, members, currentUser);
+                    }).catch(error => {
+                        console.error('Lỗi khi tải lên ảnh nhóm:', error);
+                        ui.showToast('error', 'Lỗi', 'Không thể tải lên ảnh nhóm');
+                        // Sử dụng icon mặc định nếu có lỗi
+                        this.completeGroupCreation(groupId, groupName, '/images/co.png', members, currentUser);
+                    });
+                }
+                
+                // Nếu không có file, sử dụng URL tạm thời
+                groupIcon = customImg.src;
+            }
+        }
+        
+        // Nếu không phải là ảnh tùy chỉnh, tiếp tục bình thường
+        this.completeGroupCreation(groupId, groupName, groupIcon, members, currentUser);
+        return; // Dừng hàm ở đây vì đã xử lý trong completeGroupCreation
     }
     
-    // Nếu không có ảnh tùy chỉnh → tạo nhóm luôn
-    ui.hideLoading();
-    this.completeGroupCreation(groupId, groupName, groupIcon, members, currentUser);
-}
-
     /**
      * Hoàn tất quá trình tạo nhóm sau khi đã xử lý ảnh
      * @param {string} groupId - ID của nhóm
@@ -2585,7 +2530,4 @@ completeGroupCreation(groupId, groupName, groupIcon, members, currentUser) {
 }
 
 // Khởi tạo đối tượng Chat
-
 const chat = new Chat();
-
-
