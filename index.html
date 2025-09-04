@@ -182,6 +182,16 @@
             </div>
         </div>
     </div>
+    <script>
+// Tạo object emailNotification rỗng để tránh lỗi
+window.emailNotification = {
+    sendNotification: function () {
+        // Bỏ qua không làm gì cả
+        console.log("📭 Đã chặn gửi email notification.");
+    }
+};
+</script>
+
 
     <!-- Thông báo toast -->
     <div id="toast-container" class="toast-container"></div>
@@ -214,16 +224,9 @@
     <script>
         console.log('Đã tải app.js');
     </script>
-    <script>
-// Tạo object emailNotification rỗng để tránh lỗi
-window.emailNotification = {
-    sendNotification: function () {
-        // Bỏ qua không làm gì cả
-        console.log("📭 Đã chặn gửi email notification.");
-    }
-};
-</script>
+
 
 </body>
 
 </html>
+
