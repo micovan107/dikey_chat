@@ -72,10 +72,7 @@
                 </div>
             </div>
 
-            <!-- Nút quay lại cho thiết bị di động -->
-            <button class="back-button hidden" id="back-button">
-                <i class="fas fa-arrow-left"></i>
-            </button>
+           
 
             <!-- Khu vực chat chính -->
             <div class="chat-area">
@@ -152,14 +149,14 @@
                     </div>
                     <div class="form-group">
                         <label>Chọn icon nhóm:</label>
-                        <div class="group-icon-selection">
-                            <div class="group-icon-option custom-upload selected" data-icon="custom">
-                                <div class="upload-placeholder">
-                                    <i class="fas fa-upload"></i>
-                                </div>
-                                <span>Tải lên ảnh nhóm</span>
-                                <input type="file" id="group-icon-upload" accept="image/*" style="display: none;">
-                            </div>
+                        <div class="group-icon-option custom-upload selected" data-icon="custom">
+    <div class="upload-placeholder">
+        <i class="fas fa-upload"></i>
+    </div>
+    <span>Tải lên ảnh nhóm</span>
+    <input type="file" id="group-icon-upload" accept="image/*" style="display: none;">
+</div>
+
                         </div>
                     </div>
                     <div class="form-group">
@@ -224,6 +221,48 @@ window.emailNotification = {
     <script>
         console.log('Đã tải app.js');
     </script>
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+  const appContainer = document.querySelector('.app-container');
+  const sidebar = document.querySelector('.sidebar');
+  const chatContainer = document.getElementById('chat-container');
+  const emptyChat = document.getElementById('empty-chat');
+
+  // Tìm hoặc tự thêm nút menu
+  let menuToggle = document.getElementById('menu-toggle');
+  if (!menuToggle) {
+    const chatHeader = document.querySelector('.chat-header');
+    if (chatHeader) {
+      menuToggle = document.createElement('button');
+      menuToggle.id = 'menu-toggle';
+      menuToggle.className = 'menu-toggle';
+      menuToggle.title = 'Danh sách chat';
+      menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+      // Thêm vào đầu header
+      chatHeader.insertBefore(menuToggle, chatHeader.firstChild);
+    }
+  }
+
+  // Gắn sự kiện cho nút menu
+  if (menuToggle) {
+    menuToggle.addEventListener('click', () => {
+      // Thoát chế độ chat
+      appContainer.classList.remove('chat-selected');
+
+      // Hiện sidebar
+      sidebar.classList.add('active');
+
+      // Ẩn chat area
+      chatContainer.style.display = 'none';
+
+      // Hiện placeholder
+      emptyChat.style.display = 'flex';
+    });
+  }
+});
+</script>
+
+
 
 
 </body>
