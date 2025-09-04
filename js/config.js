@@ -38,7 +38,8 @@ const dbRefs = {
     messages: database.ref('messages'),
     chats: database.ref('chats'),
     userChats: database.ref('user_chats'),
-    typing: database.ref('typing')
+    typing: database.ref('typing'),
+     groups: database.ref('groups')
 };
 
 // Emoji list for emoji picker
