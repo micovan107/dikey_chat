@@ -339,6 +339,18 @@ document.addEventListener("DOMContentLoaded", () => {
   observer.observe(document.body, { childList: true, subtree: true });
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Lắng nghe tất cả lỗi tải ảnh và ngăn không cho nó báo lên console
+  window.addEventListener("error", function (e) {
+    if (e.target.tagName === "IMG" && e.target.src.includes("/images/default-avatar.svg")) {
+      // Ngăn lỗi hiện trong console
+      e.preventDefault();
+      return false;
+    }
+  }, true);
+});
+</script>
 
 
 
@@ -347,4 +359,5 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
