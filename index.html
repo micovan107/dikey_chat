@@ -329,7 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
     chatsRef.once("value").then(snapshot => {
       snapshot.forEach(chatSnap => {
         const chat = chatSnap.val();
-        if (chat && chat.photoURL === "/images/co.png") {
+        if (chat && chat.photoURL === "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGDDudFw1HrA2I2qZ1WPGygAp2LJ5KmlRMtw&s") {
           chatsRef.child(chatSnap.key).update({ photoURL: DEFAULT_GROUP_ICON });
           console.log(`✅ Đã cập nhật icon cho nhóm: ${chat.name || chatSnap.key}`);
         }
@@ -349,6 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
