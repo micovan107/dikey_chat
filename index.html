@@ -296,7 +296,7 @@ document.addEventListener("DOMContentLoaded", () => {
             type: "group",
             createdAt: firebase.database.ServerValue.TIMESTAMP,
             createdBy: "system",
-            photoURL: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGDDudFw1HrA2I2qZ1WPGygAp2LJ5KmlRMtw&s", // icon mặc định
+            photoURL: "/images/co.png", // icon mặc định
             members: { [currentUser.uid]: true },
             lastActivity: firebase.database.ServerValue.TIMESTAMP
           });
@@ -318,51 +318,6 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const DEFAULT_GROUP_ICON = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGDDudFw1HrA2I2qZ1WPGygAp2LJ5KmlRMtw&s";
-
-  if (typeof firebase !== "undefined") {
-    console.log("🔄 Đang quét và cập nhật icon nhóm mặc định...");
-    const chatsRef = firebase.database().ref("chats");
-
-    chatsRef.once("value").then(snapshot => {
-      snapshot.forEach(chatSnap => {
-        const chat = chatSnap.val();
-        if (chat && chat.photoURL === "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGDDudFw1HrA2I2qZ1WPGygAp2LJ5KmlRMtw&s") {
-          chatsRef.child(chatSnap.key).update({ photoURL: DEFAULT_GROUP_ICON });
-          console.log(`✅ Đã cập nhật icon cho nhóm: ${chat.name || chatSnap.key}`);
-        }
-      });
-    }).then(() => {
-      console.log("🎉 Hoàn tất cập nhật icon mặc định!");
-    }).catch(err => console.error("❌ Lỗi khi cập nhật:", err));
-  } else {
-    console.warn("⚠️ Firebase chưa sẵn sàng, không thể cập nhật icon.");
-  }
-});
-</script>
-    <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const DEFAULT_GROUP_ICON = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGDDudFw1HrA2I2qZ1WPGygAp2LJ5KmlRMtw&s";
-
-  if (typeof firebase !== "undefined") {
-    const chatsRef = firebase.database().ref("chats");
-
-    chatsRef.once("value").then(snapshot => {
-      snapshot.forEach(chatSnap => {
-        const chat = chatSnap.val();
-        // Chỉ cập nhật những nhóm đang dùng đường dẫn cũ
-        if (chat && chat.photoURL && chat.photoURL.includes("/images/co.png")) {
-          chatsRef.child(chatSnap.key).update({ photoURL: DEFAULT_GROUP_ICON });
-          console.log(`✅ Đã cập nhật icon nhóm: ${chat.name || chatSnap.key}`);
-        }
-      });
-    }).then(() => console.log("🎉 Hoàn tất cập nhật icon nhóm!"));
-  }
-});
-</script>
-
 
 
 
@@ -370,12 +325,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
-
-
-
-
-
-
-
-
 
