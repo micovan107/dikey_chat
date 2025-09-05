@@ -394,7 +394,79 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
+<!-- Âm thanh thông báo -->
+<audio id="new-message-sound" 
+       src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" 
+       preload="auto"></audio>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const chatList = document.getElementById("chat-list");
+  const sound = document.getElementById("new-message-sound");
+  let userInteracted = false;
+  let lastUnreadCounts = {};
+
+  // Unlock audio khi user click hoặc gõ lần đầu
+  function unlockAudio() {
+    userInteracted = true;
+    document.removeEventListener("click", unlockAudio);
+    document.removeEventListener("keydown", unlockAudio);
+    sound.muted = true;
+    sound.play().finally(() => {
+      sound.pause();
+      sound.muted = false;
+      sound.currentTime = 0;
+      console.log("🔊 Đã unlock âm thanh");
+    });
+  }
+  document.addEventListener("click", unlockAudio);
+  document.addEventListener("keydown", unlockAudio);
+
+  async function shouldPlayForChat(chatId) {
+    try {
+      const snap = await firebase.database()
+        .ref("chats/" + chatId + "/type")
+        .once("value");
+      return snap.val() !== "group"; // chỉ true nếu chat riêng
+    } catch (err) {
+      console.warn("Không lấy được chatType:", err);
+      return false;
+    }
+  }
+
+  const observer = new MutationObserver(async (mutations) => {
+    if (!userInteracted) return;
+    for (const mutation of mutations) {
+      if (mutation.type === "childList" || mutation.type === "characterData") {
+        const chatItems = chatList.querySelectorAll(".chat-item");
+        for (const item of chatItems) {
+          const chatId = item.dataset.id;
+          const badge = item.querySelector(".unread-badge");
+          const unread = badge ? parseInt(badge.innerText) || 0 : 0;
+
+          if (unread > 0 && unread !== lastUnreadCounts[chatId]) {
+            lastUnreadCounts[chatId] = unread;
+
+            // Chỉ phát nếu chat là chat riêng + không phải chat đang mở
+            if (!item.classList.contains("active") && await shouldPlayForChat(chatId)) {
+              try {
+                sound.pause();
+                sound.currentTime = 0;
+                await sound.play();
+                console.log("🔔 Phát âm thanh cho chat riêng:", chatId);
+              } catch (err) {
+                console.warn("Không phát được âm thanh:", err);
+              }
+            }
+          }
+        }
+      }
+    }
+  });
+
+  observer.observe(chatList, { childList: true, subtree: true, characterData: true });
+});
+</script>
 
 
 
@@ -402,6 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
