@@ -530,9 +530,9 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    console.log(`✅ Đã render ${emojiList.length} emoji vào picker`);
+    console.log(" Đã render ${emojiList.length} emoji vào picker`);
   } else {
-    console.warn("⚠️ emojiList chưa được định nghĩa hoặc rỗng");
+    console.warn(" emojiList chưa được định nghĩa hoặc rỗng");
   }
 });
 </script>
@@ -588,7 +588,7 @@ document.addEventListener("click", e => {
 
       bgContainer.appendChild(list);
 
-      // 🎯 Sự kiện lưu ảnh nền
+      //  Sự kiện lưu ảnh nền
       saveBgBtn.addEventListener("click", async () => {
         const chatArea = document.querySelector(".chat-area");
         const selectedUrl = bgPreview.dataset.selectedUrl;
@@ -616,7 +616,7 @@ document.addEventListener("click", e => {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("⚡ Ghi đè updateChatItem để tránh spam tải ảnh");
+  console.log(" Ghi đè updateChatItem để tránh spam tải ảnh");
 
   // Chờ chat.js load xong
   const checkInterval = setInterval(() => {
@@ -671,14 +671,14 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       };
 
-      console.log("✅ Đã ghi đè updateChatItem thành công");
+      console.log(" Đã ghi đè updateChatItem thành công");
     }
   }, 300);
 });
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  console.log("⚡ Đang bật bộ lọc avatar để tránh reload ảnh liên tục...");
+  console.log(" Đang bật bộ lọc avatar để tránh reload ảnh liên tục...");
 
   const checkInterval = setInterval(() => {
     if (typeof window.updateChatItem === "function") {
@@ -702,7 +702,7 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       };
 
-      console.log("✅ Đã bật bộ lọc ảnh chống spam");
+      console.log(" Đã bật bộ lọc ảnh chống spam");
     }
   }, 200);
 });
@@ -742,7 +742,7 @@ document.addEventListener("DOMContentLoaded", () => {
         });
       };
 
-      console.log("✅ Đã ghi đè renderChatList: chỉ cập nhật chatItem thay vì re-render toàn bộ");
+      console.log(" Đã ghi đè renderChatList: chỉ cập nhật chatItem thay vì re-render toàn bộ");
     }
   }, 300);
 });
@@ -759,7 +759,7 @@ document.addEventListener("DOMContentLoaded", () => {
         // Gọi bản gốc để cập nhật dữ liệu vào bộ nhớ
         originalUpdateChatUserInfo(userId, userData);
 
-        // 🚫 Không render lại toàn bộ danh sách nữa
+        //  Không render lại toàn bộ danh sách nữa
         // Tự tìm chatItem của user vừa update và chỉ cập nhật phần cần thiết
         const chatItem = document.querySelector(`[data-user-id="${userId}"]`);
         if (chatItem && typeof window.updateChatItem === "function") {
@@ -778,7 +778,68 @@ document.addEventListener("DOMContentLoaded", () => {
         }
       };
 
-      console.log("✅ Đã ghi đè updateChatUserInfo: chỉ update user thay đổi, không render lại toàn bộ danh sách");
+      console.log(" Đã ghi đè updateChatUserInfo: chỉ update user thay đổi, không render lại toàn bộ danh sách");
+    }
+  }, 300);
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("⚡ Ghi đè updateChatItem để không spam ảnh...");
+
+  const checkInterval = setInterval(() => {
+    if (typeof window.updateChatItem === "function") {
+      clearInterval(checkInterval);
+
+      window.updateChatItem = function(chatItem, chatPhoto, chatName, lastMessageTime, lastMessageText, unreadCount, onlineStatus) {
+        // Nếu lần đầu -> tạo cấu trúc DOM 1 lần
+        if (!chatItem.dataset.initialized) {
+          chatItem.innerHTML = `
+            <div class="chat-avatar">
+              <img alt="">
+              <span class="chat-status"></span>
+            </div>
+            <div class="chat-details">
+              <div class="chat-name">
+                <span class="chat-name-text"></span>
+                <span class="chat-time"></span>
+              </div>
+              <div class="chat-last-message"></div>
+            </div>
+            <div class="unread-badge" style="display:none;"></div>
+          `;
+          chatItem.dataset.initialized = "true";
+        }
+
+        // Cập nhật avatar chỉ khi khác
+        const avatarImg = chatItem.querySelector(".chat-avatar img");
+        if (avatarImg.src !== chatPhoto) {
+          avatarImg.src = chatPhoto;
+          avatarImg.alt = chatName;
+        }
+
+        // Cập nhật onlineStatus nếu khác
+        const statusEl = chatItem.querySelector(".chat-status");
+        if (statusEl.outerHTML !== onlineStatus) {
+          statusEl.outerHTML = onlineStatus;
+        }
+
+        // Cập nhật nội dung text
+        chatItem.querySelector(".chat-name-text").textContent = chatName;
+        chatItem.querySelector(".chat-time").textContent = lastMessageTime;
+        chatItem.querySelector(".chat-last-message").textContent = lastMessageText;
+
+        // Badge tin nhắn chưa đọc
+        const badge = chatItem.querySelector(".unread-badge");
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount;
+          badge.style.display = "block";
+        } else {
+          badge.style.display = "none";
+        }
+      };
+
+      console.log(" Đã ghi đè updateChatItem thành công (chỉ cập nhật khi thay đổi).");
     }
   }, 300);
 });
@@ -788,6 +849,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
