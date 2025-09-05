@@ -467,13 +467,159 @@ document.addEventListener("DOMContentLoaded", () => {
   observer.observe(chatList, { childList: true, subtree: true, characterData: true });
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const messagesContainer = document.getElementById("messages-container");
 
+  function isPureTextBubble(el) {
+    // Nếu có bất kỳ thẻ con nào bên trong -> không phải text thuần
+    return Array.from(el.childNodes).every(node => node.nodeType === Node.TEXT_NODE);
+  }
 
+  function linkifyElement(el) {
+    const text = el.textContent.trim();
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    if (urlRegex.test(text)) {
+      const linkedHTML = text.replace(
+        urlRegex,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>'
+      );
+      el.innerHTML = linkedHTML;
+    }
+    el.dataset.linkified = "true";
+  }
+
+  function linkifyAllMessages() {
+    messagesContainer.querySelectorAll(".message-bubble").forEach(el => {
+      if (!el.dataset.linkified && isPureTextBubble(el)) {
+        linkifyElement(el);
+      } else {
+        // Đánh dấu đã kiểm tra để không xử lý lại
+        el.dataset.linkified = "true";
+      }
+    });
+  }
+
+  // Chạy ngay khi load
+  linkifyAllMessages();
+
+  // Theo dõi khi có tin nhắn mới
+  const observer = new MutationObserver(() => {
+    linkifyAllMessages();
+  });
+  observer.observe(messagesContainer, { childList: true, subtree: true, characterData: true });
+});
+</script>
+
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const emojiContainer = document.getElementById("emoji-container");
+  if (!emojiContainer) return;
+
+  if (typeof emojiList !== "undefined" && Array.isArray(emojiList)) {
+    emojiContainer.innerHTML = emojiList.map(e => `
+      <span class="emoji-item" style="cursor:pointer; font-size:20px;">${e}</span>
+    `).join("");
+
+    // Gắn sự kiện click để chèn emoji vào input
+    emojiContainer.querySelectorAll(".emoji-item").forEach(el => {
+      el.addEventListener("click", () => {
+        const input = document.getElementById("message-text");
+        input.value += el.textContent;
+        input.focus();
+      });
+    });
+
+    console.log(`✅ Đã render ${emojiList.length} emoji vào picker`);
+  } else {
+    console.warn("⚠️ emojiList chưa được định nghĩa hoặc rỗng");
+  }
+});
+</script>
+<script>
+document.addEventListener("click", e => {
+  if (e.target.closest("#change-bg-button")) {
+    setTimeout(() => {
+      const bgContainer = document.querySelector(".bg-upload-container");
+      const bgPreview = document.getElementById("bg-preview");
+      const saveBgBtn = document.getElementById("save-bg-button");
+      if (!bgContainer || !saveBgBtn) return;
+
+      // Xóa danh sách cũ tránh bị nhân đôi
+      const oldList = bgContainer.querySelector(".predefined-bg-list");
+      if (oldList) oldList.remove();
+
+      // Danh sách ảnh có sẵn
+      const predefinedBackgrounds = [
+        "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=800",
+        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=800",
+        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=800",
+        "https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?w=800"
+      ];
+
+      const list = document.createElement("div");
+      list.className = "predefined-bg-list";
+      list.style.display = "grid";
+      list.style.gridTemplateColumns = "repeat(auto-fill, minmax(80px, 1fr))";
+      list.style.gap = "8px";
+      list.style.marginTop = "10px";
+
+      predefinedBackgrounds.forEach(url => {
+        const img = document.createElement("img");
+        img.src = url;
+        img.style.width = "100%";
+        img.style.height = "60px";
+        img.style.objectFit = "cover";
+        img.style.borderRadius = "6px";
+        img.style.cursor = "pointer";
+
+        img.addEventListener("click", () => {
+          document.querySelectorAll(".predefined-bg-list img")
+            .forEach(el => el.style.outline = "none");
+          img.style.outline = "2px solid #2196f3";
+
+          bgPreview.src = url;
+          bgPreview.style.display = "block";
+          bgPreview.dataset.selectedUrl = url;
+        });
+
+        list.appendChild(img);
+      });
+
+      bgContainer.appendChild(list);
+
+      // 🎯 Sự kiện lưu ảnh nền
+      saveBgBtn.addEventListener("click", async () => {
+        const chatArea = document.querySelector(".chat-area");
+        const selectedUrl = bgPreview.dataset.selectedUrl;
+
+        if (selectedUrl) {
+          // Đổi nền ngay lập tức trên giao diện
+          chatArea.style.backgroundImage = `url('${selectedUrl}')`;
+          chatArea.style.backgroundSize = "cover";
+          chatArea.style.backgroundPosition = "center";
+
+          // Lưu vào Firebase (nếu có chatId)
+          if (window.currentChatId && window.firebase) {
+            await firebase.database()
+              .ref("chats/" + window.currentChatId + "/background")
+              .set(selectedUrl);
+          }
+        }
+
+        // Đóng modal
+        saveBgBtn.closest(".modal-content").parentElement.remove();
+      });
+    }, 200);
+  }
+});
+</script>
 
 
 </body>
 
 </html>
+
 
 
 
