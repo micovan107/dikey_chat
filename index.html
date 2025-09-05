@@ -676,11 +676,43 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 300);
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("⚡ Đang bật bộ lọc avatar để tránh reload ảnh liên tục...");
+
+  const checkInterval = setInterval(() => {
+    if (typeof window.updateChatItem === "function") {
+      clearInterval(checkInterval);
+
+      // Lưu hàm gốc
+      const originalUpdateChatItem = window.updateChatItem;
+
+      // Tạo hàm ghi đè
+      window.updateChatItem = function(chatItem, chatPhoto, chatName, lastMessageTime, lastMessageText, unreadCount, onlineStatus) {
+        const oldImg = chatItem.querySelector(".chat-avatar img");
+        const oldSrc = oldImg ? oldImg.src : null;
+
+        // Gọi hàm gốc để render như bình thường
+        originalUpdateChatItem(chatItem, chatPhoto, chatName, lastMessageTime, lastMessageText, unreadCount, onlineStatus);
+
+        // Sau khi render xong, nếu ảnh không đổi thì giữ lại ảnh cũ để tránh browser reload
+        const newImg = chatItem.querySelector(".chat-avatar img");
+        if (oldSrc && newImg && newImg.src === chatPhoto && oldSrc === chatPhoto) {
+          newImg.src = oldSrc;
+        }
+      };
+
+      console.log("✅ Đã bật bộ lọc ảnh chống spam");
+    }
+  }, 200);
+});
+</script>
 
 
 </body>
 
 </html>
+
 
 
 
