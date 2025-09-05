@@ -542,20 +542,49 @@ class Chat {
             const unreadCount = this.unreadMessages[chat.id] || 0;
             const unreadBadge = unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : '';
             
-            chatItem.innerHTML = `
-                <div class="chat-avatar">
-                    <img src="${chatPhoto}" alt="${chatName}">
-                    ${onlineStatus}
-                </div>
-                <div class="chat-details">
-                    <div class="chat-name">
-                        ${chatName}
-                        <span class="chat-time">${lastMessageTime}</span>
-                    </div>
-                    <div class="chat-last-message">${lastMessageText}</div>
-                </div>
-                ${unreadBadge}
-            `;
+            // Nếu chưa có layout -> tạo 1 lần
+if (!chatItem.dataset.initialized) {
+  chatItem.innerHTML = `
+    <div class="chat-avatar">
+      <img alt="">
+      <span class="chat-status"></span>
+    </div>
+    <div class="chat-details">
+      <div class="chat-name">
+        <span class="chat-name-text"></span>
+        <span class="chat-time"></span>
+      </div>
+      <div class="chat-last-message"></div>
+    </div>
+    <div class="unread-badge" style="display:none;"></div>
+  `;
+  chatItem.dataset.initialized = "true";
+}
+
+// Cập nhật từng phần (chỉ thay đổi khi cần)
+const avatarImg = chatItem.querySelector(".chat-avatar img");
+if (avatarImg.src !== chatPhoto) {
+  avatarImg.src = chatPhoto;
+  avatarImg.alt = chatName;
+}
+
+const statusEl = chatItem.querySelector(".chat-status");
+if (statusEl.outerHTML !== onlineStatus) {
+  statusEl.outerHTML = onlineStatus;
+}
+
+chatItem.querySelector(".chat-name-text").textContent = chatName;
+chatItem.querySelector(".chat-time").textContent = lastMessageTime;
+chatItem.querySelector(".chat-last-message").textContent = lastMessageText;
+
+const badge = chatItem.querySelector(".unread-badge");
+if (unreadCount > 0) {
+  badge.textContent = unreadCount;
+  badge.style.display = "block";
+} else {
+  badge.style.display = "none";
+}
+
             
             // Thêm sự kiện click
             chatItem.addEventListener('click', () => {
@@ -2510,4 +2539,5 @@ fileInput.addEventListener('change', (e) => {
 
 // Khởi tạo đối tượng Chat
 const chat = new Chat();
+
 
