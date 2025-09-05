@@ -707,11 +707,52 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 200);
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const checkInterval = setInterval(() => {
+    if (typeof window.renderChatList === "function") {
+      clearInterval(checkInterval);
+
+      const originalRenderChatList = window.renderChatList;
+      window.renderChatList = function(chats) {
+        const chatList = document.querySelector("#chat-list");
+        if (!chatList) return originalRenderChatList(chats);
+
+        chats.forEach(chat => {
+          let chatItem = chatList.querySelector(`[data-chat-id="${chat.id}"]`);
+          if (!chatItem) {
+            // Nếu chưa có -> tạo mới
+            chatItem = document.createElement("div");
+            chatItem.className = "chat-item";
+            chatItem.dataset.chatId = chat.id;
+            chatList.appendChild(chatItem);
+          }
+          // Chỉ cập nhật nội dung bên trong (gọi lại hàm updateChatItem bạn đã fix)
+          if (typeof window.updateChatItem === "function") {
+            window.updateChatItem(
+              chatItem,
+              chat.photoURL,
+              chat.name,
+              chat.lastMessageTime,
+              chat.lastMessage,
+              chat.unreadCount,
+              chat.onlineStatus
+            );
+          }
+        });
+      };
+
+      console.log("✅ Đã ghi đè renderChatList: chỉ cập nhật chatItem thay vì re-render toàn bộ");
+    }
+  }, 300);
+});
+</script>
 
 
 </body>
 
 </html>
+
 
 
 
