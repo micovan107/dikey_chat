@@ -614,11 +614,74 @@ document.addEventListener("click", e => {
   }
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  console.log("⚡ Ghi đè updateChatItem để tránh spam tải ảnh");
+
+  // Chờ chat.js load xong
+  const checkInterval = setInterval(() => {
+    if (typeof window.updateChatItem === "function") {
+      clearInterval(checkInterval);
+
+      // Ghi đè hàm updateChatItem
+      const originalUpdateChatItem = window.updateChatItem;
+      window.updateChatItem = function(chatItem, chatPhoto, chatName, lastMessageTime, lastMessageText, unreadCount, onlineStatus) {
+        // Nếu lần đầu -> tạo cấu trúc DOM
+        if (!chatItem.dataset.initialized) {
+          chatItem.innerHTML = `
+            <div class="chat-avatar">
+              <img alt="">
+              ${onlineStatus}
+            </div>
+            <div class="chat-details">
+              <div class="chat-name">
+                <span class="chat-name-text"></span>
+                <span class="chat-time"></span>
+              </div>
+              <div class="chat-last-message"></div>
+            </div>
+            <div class="unread-badge" style="display:none;"></div>
+          `;
+          chatItem.dataset.initialized = "true";
+        }
+
+        // Cập nhật avatar chỉ khi khác src
+        const avatarImg = chatItem.querySelector(".chat-avatar img");
+        if (avatarImg.src !== chatPhoto) {
+          avatarImg.src = chatPhoto;
+          avatarImg.alt = chatName;
+        }
+
+        // Cập nhật onlineStatus
+        const statusEl = chatItem.querySelector(".chat-avatar").lastElementChild;
+        statusEl.outerHTML = onlineStatus;
+
+        // Cập nhật tên, thời gian, tin nhắn cuối
+        chatItem.querySelector(".chat-name-text").textContent = chatName;
+        chatItem.querySelector(".chat-time").textContent = lastMessageTime;
+        chatItem.querySelector(".chat-last-message").textContent = lastMessageText;
+
+        // Badge unread
+        const badge = chatItem.querySelector(".unread-badge");
+        if (unreadCount > 0) {
+          badge.textContent = unreadCount;
+          badge.style.display = "block";
+        } else {
+          badge.style.display = "none";
+        }
+      };
+
+      console.log("✅ Đã ghi đè updateChatItem thành công");
+    }
+  }, 300);
+});
+</script>
 
 
 </body>
 
 </html>
+
 
 
 
