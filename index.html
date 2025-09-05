@@ -352,6 +352,31 @@ document.addEventListener("DOMContentLoaded", () => {
   }, true);
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Ngăn việc setAttribute("src", ...) lặp lại gây reload ảnh
+  const origSetAttribute = HTMLImageElement.prototype.setAttribute;
+  HTMLImageElement.prototype.setAttribute = function(name, value) {
+    if (name === "src" && this.getAttribute("src") === value) {
+      // Ảnh đã đúng URL -> không cần set lại (tránh request lại)
+      return;
+    }
+    return origSetAttribute.apply(this, arguments);
+  };
+
+  // Nếu code nào đó hay gán trực tiếp img.src thì cũng patch luôn
+  Object.defineProperty(HTMLImageElement.prototype, "src", {
+    set: function(value) {
+      if (this.getAttribute("src") !== value) {
+        origSetAttribute.call(this, "src", value);
+      }
+    },
+    get: function() {
+      return this.getAttribute("src");
+    }
+  });
+});
+</script>
 
 
 
@@ -362,6 +387,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
