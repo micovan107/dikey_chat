@@ -354,31 +354,46 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // Ngăn việc setAttribute("src", ...) lặp lại gây reload ảnh
+  // 1️⃣ Patch renderMessage để không xoá DOM cũ mỗi lần
+  if (typeof window.renderMessage === "function") {
+    const origRenderMessage = window.renderMessage;
+    window.renderMessage = function(message) {
+      // Kiểm tra nếu tin nhắn đã tồn tại trong DOM thì bỏ qua
+      const container = document.getElementById("messages-container");
+      if (container && message.id && container.querySelector(`[data-msg-id="${message.id}"]`)) {
+        return; // đã render rồi
+      }
+      return origRenderMessage.apply(this, arguments);
+    };
+  }
+
+  // 2️⃣ Chặn setAttribute src lặp để tránh reload avatar liên tục
   const origSetAttribute = HTMLImageElement.prototype.setAttribute;
   HTMLImageElement.prototype.setAttribute = function(name, value) {
     if (name === "src" && this.getAttribute("src") === value) {
-      // Ảnh đã đúng URL -> không cần set lại (tránh request lại)
       return;
     }
     return origSetAttribute.apply(this, arguments);
   };
 
-  // Nếu code nào đó hay gán trực tiếp img.src thì cũng patch luôn
-  Object.defineProperty(HTMLImageElement.prototype, "src", {
-    set: function(value) {
-      if (this.getAttribute("src") !== value) {
-        origSetAttribute.call(this, "src", value);
+  // 3️⃣ Hạn chế MutationObserver fix ảnh chạy quá nhiều
+  if (window.MutationObserver) {
+    const origObserve = MutationObserver.prototype.observe;
+    MutationObserver.prototype.observe = function(target, options) {
+      if (options.subtree && options.childList) {
+        // Giới hạn tối đa 1 lần callback mỗi 200ms
+        let timeout;
+        const origCallback = this.callback;
+        this.callback = (...args) => {
+          clearTimeout(timeout);
+          timeout = setTimeout(() => origCallback(...args), 200);
+        };
       }
-    },
-    get: function() {
-      return this.getAttribute("src");
-    }
-  });
+      return origObserve.apply(this, arguments);
+    };
+  }
 });
 </script>
-
-
 
 
 
@@ -387,6 +402,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
