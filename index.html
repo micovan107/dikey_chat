@@ -289,23 +289,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
       groupRef.once("value").then((snapshot) => {
         if (!snapshot.exists()) {
-          // Tạo mới nhóm nếu chưa có
+          // ❌ KHÔNG lưu photoURL mặc định vào DB
           groupRef.set({
             id: defaultGroupId,
             name: defaultGroupName,
             type: "group",
             createdAt: firebase.database.ServerValue.TIMESTAMP,
             createdBy: "system",
-            photoURL: "/images/co.png", // icon mặc định
             members: { [currentUser.uid]: true },
             lastActivity: firebase.database.ServerValue.TIMESTAMP
           });
         } else {
-          // Nếu có rồi, chỉ cần thêm user vào
           groupRef.child("members/" + currentUser.uid).set(true);
         }
 
-        // ⚡ Thêm nhóm này vào danh sách chat của user
+        // Thêm nhóm này vào danh sách chat của user
         firebase.database()
           .ref("user_chats/" + currentUser.uid + "/" + defaultGroupId)
           .set({
@@ -317,7 +315,28 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 500);
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  // Dùng ảnh thật từ link online (không phụ thuộc GitHub)
+  const DEFAULT_AVATAR = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGDDudFw1HrA2I2qZ1WPGygAp2LJ5KmlRMtw&s";
+  const DEFAULT_GROUP_ICON = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGDDudFw1HrA2I2qZ1WPGygAp2LJ5KmlRMtw&s";
 
+  function fixDefaultImages() {
+    document.querySelectorAll("img[src='/images/default-avatar.svg']").forEach(img => {
+      img.src = DEFAULT_AVATAR;
+    });
+
+    document.querySelectorAll("img[src='/images/co.png']").forEach(img => {
+      img.src = DEFAULT_GROUP_ICON;
+    });
+  }
+
+  fixDefaultImages();
+
+  const observer = new MutationObserver(fixDefaultImages);
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+</script>
 
 
 
