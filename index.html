@@ -352,26 +352,43 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 <script>
-(function() {
+document.addEventListener("DOMContentLoaded", () => {
+  // Ảnh trong suốt 1x1px, không tạo request ra server
+  const EMPTY_AVATAR = "data:image/gif;base64,R0lGODlhAQABAAD/ACwAAAAAAQABAAACADs=";
+
+  // Đổi src ngay khi DOM load
+  document.querySelectorAll("img[src='/images/default-avatar.svg']").forEach(img => {
+    img.src = EMPTY_AVATAR;
+  });
+
+  // Nếu sau này DOM render thêm ảnh mới, quan sát và đổi ngay
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll("img[src='/images/default-avatar.svg']").forEach(img => {
+      img.src = EMPTY_AVATAR;
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+
+  // Ngăn mọi lần gán mới bằng JS về default-avatar.svg
   const origSetAttribute = Element.prototype.setAttribute;
   Element.prototype.setAttribute = function(name, value) {
     if (name === "src" && typeof value === "string" && value.includes("/images/default-avatar.svg")) {
-      console.trace("⚠️ Gán src default-avatar.svg:", this);
+      value = EMPTY_AVATAR; // thay luôn trước khi browser request
     }
-    return origSetAttribute.apply(this, arguments);
+    return origSetAttribute.apply(this, [name, value]);
   };
 
   const origSrcDescriptor = Object.getOwnPropertyDescriptor(HTMLImageElement.prototype, 'src');
   Object.defineProperty(HTMLImageElement.prototype, 'src', {
     set(value) {
       if (typeof value === "string" && value.includes("/images/default-avatar.svg")) {
-        console.trace("⚠️ Gán trực tiếp src default-avatar.svg:", this);
+        value = EMPTY_AVATAR;
       }
       origSrcDescriptor.set.call(this, value);
     },
     get: origSrcDescriptor.get
   });
-})();
+});
 </script>
 
 
@@ -382,6 +399,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
