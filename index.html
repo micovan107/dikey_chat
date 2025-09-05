@@ -747,11 +747,48 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 300);
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const check = setInterval(() => {
+    if (typeof window.updateChatUserInfo === "function" && typeof window.renderChatList === "function") {
+      clearInterval(check);
+
+      const originalUpdateChatUserInfo = window.updateChatUserInfo;
+
+      window.updateChatUserInfo = function(userId, userData) {
+        // Gọi bản gốc để cập nhật dữ liệu vào bộ nhớ
+        originalUpdateChatUserInfo(userId, userData);
+
+        // 🚫 Không render lại toàn bộ danh sách nữa
+        // Tự tìm chatItem của user vừa update và chỉ cập nhật phần cần thiết
+        const chatItem = document.querySelector(`[data-user-id="${userId}"]`);
+        if (chatItem && typeof window.updateChatItem === "function") {
+          const chat = window.chats?.[userId];
+          if (chat) {
+            window.updateChatItem(
+              chatItem,
+              chat.photoURL,
+              chat.name,
+              chat.lastMessageTime,
+              chat.lastMessage,
+              chat.unreadCount,
+              chat.onlineStatus
+            );
+          }
+        }
+      };
+
+      console.log("✅ Đã ghi đè updateChatUserInfo: chỉ update user thay đổi, không render lại toàn bộ danh sách");
+    }
+  }, 300);
+});
+</script>
 
 
 </body>
 
 </html>
+
 
 
 
