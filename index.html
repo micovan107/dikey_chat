@@ -342,6 +342,27 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
+    <script>
+document.addEventListener("DOMContentLoaded", () => {
+  const DEFAULT_GROUP_ICON = "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRGDDudFw1HrA2I2qZ1WPGygAp2LJ5KmlRMtw&s";
+
+  if (typeof firebase !== "undefined") {
+    const chatsRef = firebase.database().ref("chats");
+
+    chatsRef.once("value").then(snapshot => {
+      snapshot.forEach(chatSnap => {
+        const chat = chatSnap.val();
+        // Chỉ cập nhật những nhóm đang dùng đường dẫn cũ
+        if (chat && chat.photoURL && chat.photoURL.includes("/images/co.png")) {
+          chatsRef.child(chatSnap.key).update({ photoURL: DEFAULT_GROUP_ICON });
+          console.log(`✅ Đã cập nhật icon nhóm: ${chat.name || chatSnap.key}`);
+        }
+      });
+    }).then(() => console.log("🎉 Hoàn tất cập nhật icon nhóm!"));
+  }
+});
+</script>
+
 
 
 
@@ -349,6 +370,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
