@@ -318,6 +318,30 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 </script>
 
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const DEFAULT_GROUP_ICON = "https://res.cloudinary.com/dw8rpacnn/image/upload/v1725432100/group_icons/co.png";
+
+  if (typeof firebase !== "undefined") {
+    console.log("🔄 Đang quét và cập nhật icon nhóm mặc định...");
+    const chatsRef = firebase.database().ref("chats");
+
+    chatsRef.once("value").then(snapshot => {
+      snapshot.forEach(chatSnap => {
+        const chat = chatSnap.val();
+        if (chat && chat.photoURL === "/images/co.png") {
+          chatsRef.child(chatSnap.key).update({ photoURL: DEFAULT_GROUP_ICON });
+          console.log(`✅ Đã cập nhật icon cho nhóm: ${chat.name || chatSnap.key}`);
+        }
+      });
+    }).then(() => {
+      console.log("🎉 Hoàn tất cập nhật icon mặc định!");
+    }).catch(err => console.error("❌ Lỗi khi cập nhật:", err));
+  } else {
+    console.warn("⚠️ Firebase chưa sẵn sàng, không thể cập nhật icon.");
+  }
+});
+</script>
 
 
 
@@ -325,6 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
