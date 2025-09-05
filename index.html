@@ -184,7 +184,7 @@
 window.emailNotification = {
     sendNotification: function () {
         // Bỏ qua không làm gì cả
-        console.log("📭 Đã chặn gửi email notification.");
+        console.log(" Đã chặn gửi email notification.");
     }
 };
 </script>
@@ -222,9 +222,9 @@ window.emailNotification = {
     <script>
 document.addEventListener("DOMContentLoaded", () => {
   if (typeof authManager !== "undefined") {
-    console.log("⚠️ Đã vô hiệu hóa addUserToDefaultGroup() từ auth.js");
+    console.log(" Đã vô hiệu hóa addUserToDefaultGroup() từ auth.js");
     authManager.addUserToDefaultGroup = function() {
-      console.log("⛔ Hàm addUserToDefaultGroup() đã bị vô hiệu hóa.");
+      console.log(" Hàm addUserToDefaultGroup() đã bị vô hiệu hóa.");
       return null;
     };
   }
@@ -290,7 +290,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       groupRef.once("value").then((snapshot) => {
         if (!snapshot.exists()) {
-          // ❌ KHÔNG lưu photoURL mặc định vào DB
+          //  KHÔNG lưu photoURL mặc định vào DB
           groupRef.set({
             id: defaultGroupId,
             name: defaultGroupName,
@@ -354,7 +354,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // 1️⃣ Patch renderMessage để không xoá DOM cũ mỗi lần
+  //  Patch renderMessage để không xoá DOM cũ mỗi lần
   if (typeof window.renderMessage === "function") {
     const origRenderMessage = window.renderMessage;
     window.renderMessage = function(message) {
@@ -367,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
     };
   }
 
-  // 2️⃣ Chặn setAttribute src lặp để tránh reload avatar liên tục
+  //  Chặn setAttribute src lặp để tránh reload avatar liên tục
   const origSetAttribute = HTMLImageElement.prototype.setAttribute;
   HTMLImageElement.prototype.setAttribute = function(name, value) {
     if (name === "src" && this.getAttribute("src") === value) {
@@ -376,7 +376,7 @@ document.addEventListener("DOMContentLoaded", () => {
     return origSetAttribute.apply(this, arguments);
   };
 
-  // 3️⃣ Hạn chế MutationObserver fix ảnh chạy quá nhiều
+  //  Hạn chế MutationObserver fix ảnh chạy quá nhiều
   if (window.MutationObserver) {
     const origObserve = MutationObserver.prototype.observe;
     MutationObserver.prototype.observe = function(target, options) {
@@ -453,7 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
                 sound.pause();
                 sound.currentTime = 0;
                 await sound.play();
-                console.log("🔔 Phát âm thanh cho chat riêng:", chatId);
+                console.log(" Phát âm thanh cho chat riêng:", chatId);
               } catch (err) {
                 console.warn("Không phát được âm thanh:", err);
               }
@@ -474,6 +474,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
 
