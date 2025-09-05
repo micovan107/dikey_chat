@@ -351,6 +351,32 @@ document.addEventListener("DOMContentLoaded", () => {
   }, true);
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const EMPTY_IMG = "data:image/gif;base64,R0lGODlhAQABAAAAACw="; // ảnh trong suốt 1x1 px
+
+  // Tìm tất cả ảnh có src mặc định và đổi ngay trước khi browser request
+  document.querySelectorAll("img[src='/images/default-avatar.svg']").forEach(img => {
+    img.src = EMPTY_IMG;
+  });
+
+  document.querySelectorAll("img[src='/images/co.png']").forEach(img => {
+    img.src = EMPTY_IMG;
+  });
+
+  // Nếu sau này DOM thêm ảnh mới, quan sát và đổi ngay
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll("img[src='/images/default-avatar.svg']").forEach(img => {
+      img.src = EMPTY_IMG;
+    });
+    document.querySelectorAll("img[src='/images/co.png']").forEach(img => {
+      img.src = EMPTY_IMG;
+    });
+  });
+
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+</script>
 
 
 
@@ -359,5 +385,6 @@ document.addEventListener("DOMContentLoaded", () => {
 </body>
 
 </html>
+
 
 
