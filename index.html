@@ -184,7 +184,7 @@
 window.emailNotification = {
     sendNotification: function () {
         // Bỏ qua không làm gì cả
-        console.log(" Đã chặn gửi email notification.");
+        console.log("📭 Đã chặn gửi email notification.");
     }
 };
 </script>
@@ -352,48 +352,8 @@ document.addEventListener("DOMContentLoaded", () => {
   }, true);
 });
 </script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  //  Patch renderMessage để không xoá DOM cũ mỗi lần
-  if (typeof window.renderMessage === "function") {
-    const origRenderMessage = window.renderMessage;
-    window.renderMessage = function(message) {
-      // Kiểm tra nếu tin nhắn đã tồn tại trong DOM thì bỏ qua
-      const container = document.getElementById("messages-container");
-      if (container && message.id && container.querySelector(`[data-msg-id="${message.id}"]`)) {
-        return; // đã render rồi
-      }
-      return origRenderMessage.apply(this, arguments);
-    };
-  }
 
-  //  Chặn setAttribute src lặp để tránh reload avatar liên tục
-  const origSetAttribute = HTMLImageElement.prototype.setAttribute;
-  HTMLImageElement.prototype.setAttribute = function(name, value) {
-    if (name === "src" && this.getAttribute("src") === value) {
-      return;
-    }
-    return origSetAttribute.apply(this, arguments);
-  };
 
-  //  Hạn chế MutationObserver fix ảnh chạy quá nhiều
-  if (window.MutationObserver) {
-    const origObserve = MutationObserver.prototype.observe;
-    MutationObserver.prototype.observe = function(target, options) {
-      if (options.subtree && options.childList) {
-        // Giới hạn tối đa 1 lần callback mỗi 200ms
-        let timeout;
-        const origCallback = this.callback;
-        this.callback = (...args) => {
-          clearTimeout(timeout);
-          timeout = setTimeout(() => origCallback(...args), 200);
-        };
-      }
-      return origObserve.apply(this, arguments);
-    };
-  }
-});
-</script>
 <!-- Âm thanh thông báo -->
 <audio id="new-message-sound" 
        src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" 
@@ -530,12 +490,14 @@ document.addEventListener("DOMContentLoaded", () => {
       });
     });
 
-    console.log(" Đã render ${emojiList.length} emoji vào picker`);
+    console.log(` Đã render ${emojiList.length} emoji vào picker`);
   } else {
     console.warn(" emojiList chưa được định nghĩa hoặc rỗng");
   }
 });
 </script>
+
+
 <script>
 document.addEventListener("click", e => {
   if (e.target.closest("#change-bg-button")) {
@@ -615,78 +577,265 @@ document.addEventListener("click", e => {
 });
 </script>
 <script>
-document.addEventListener("DOMContentLoaded", () => {
-  const wait = setInterval(() => {
-    if (typeof window.renderChatList === "function" && typeof window.updateChatItem === "function") {
-      clearInterval(wait);
-
-      // Lưu hàm gốc
-      const originalUpdateChatItem = window.updateChatItem;
-
-      // Ghi đè updateChatItem: chỉ update khi có thay đổi
-      window.updateChatItem = function(chatItem, chatPhoto, chatName, lastMessageTime, lastMessageText, unreadCount, onlineStatus) {
-        if (!chatItem.dataset.initialized) {
-          chatItem.innerHTML = `
-            <div class="chat-avatar">
-              <img alt="">
-              <span class="chat-status"></span>
-            </div>
-            <div class="chat-details">
-              <div class="chat-name">
-                <span class="chat-name-text"></span>
-                <span class="chat-time"></span>
-              </div>
-              <div class="chat-last-message"></div>
-            </div>
-            <div class="unread-badge" style="display:none;"></div>
-          `;
-          chatItem.dataset.initialized = "true";
-        }
-
-        const avatarImg = chatItem.querySelector(".chat-avatar img");
-        if (avatarImg.src !== chatPhoto) avatarImg.src = chatPhoto;
-
-        const statusEl = chatItem.querySelector(".chat-status");
-        if (statusEl.outerHTML !== onlineStatus) statusEl.outerHTML = onlineStatus;
-
-        chatItem.querySelector(".chat-name-text").textContent = chatName;
-        chatItem.querySelector(".chat-time").textContent = lastMessageTime;
-        chatItem.querySelector(".chat-last-message").textContent = lastMessageText;
-
-        const badge = chatItem.querySelector(".unread-badge");
-        if (unreadCount > 0) {
-          badge.textContent = unreadCount;
-          badge.style.display = "block";
-        } else {
-          badge.style.display = "none";
-        }
-      };
-
-      // Ghi đè renderChatList: chỉ thêm/cập nhật chat mới
-      const originalRenderChatList = window.renderChatList;
-      window.renderChatList = function(chats) {
-        const chatList = document.getElementById("chat-list");
-        chats.forEach(chat => {
-          let chatItem = chatList.querySelector(`[data-chat-id="${chat.id}"]`);
-          if (!chatItem) {
-            chatItem = document.createElement("div");
-            chatItem.className = "chat-item";
-            chatItem.dataset.chatId = chat.id;
-            chatList.appendChild(chatItem);
-          }
-          window.updateChatItem(chatItem, chat.photoURL, chat.name, chat.lastMessageTime, chat.lastMessage, chat.unreadCount, chat.onlineStatus);
+// Ghi đè loadChats
+chat.loadChats = function() {
+    dbRefs.chats.on('value', snapshot => {
+        const chatsData = snapshot.val() || {};
+        this.chats = {};
+        Object.keys(chatsData).forEach(chatId => {
+            this.chats[chatId] = chatsData[chatId];
+            this.chats[chatId].id = chatId;
         });
-      };
+
+        //  Chỉ update user info 1 lần rồi render list
+        this.updateChatUserInfo(() => this.renderChatList());
+    });
+};
+
+// Ghi đè renderChatList
+chat.renderChatList = function() {
+    const chatListElement = document.getElementById('chat-list');
+    const currentUser = authManager.getCurrentUser();
+    if (!currentUser || !chatListElement) return;
+
+    const sortedChats = Object.values(this.chats).sort((a, b) => {
+        const aLast = this.getLastMessage(a.id);
+        const bLast = this.getLastMessage(b.id);
+        const aTime = aLast ? aLast.timestamp : 0;
+        const bTime = bLast ? bLast.timestamp : 0;
+        return bTime - aTime;
+    });
+
+    const existingItems = new Map();
+    chatListElement.querySelectorAll('.chat-item').forEach(item => {
+        existingItems.set(item.dataset.id, item);
+    });
+
+    sortedChats.forEach(chat => {
+        if (!chat.members || !chat.members[currentUser.uid]) return;
+
+        const lastMessage = this.getLastMessage(chat.id);
+        let lastMessageText = '';
+        if (lastMessage) {
+            lastMessageText = lastMessage.type === 'image' ? ' Hình ảnh' : lastMessage.text;
+            if (chat.type === 'group' && lastMessage.senderId !== 'system') {
+                const senderName = lastMessage.senderName || this.getUserName(lastMessage.senderId);
+                lastMessageText = `${senderName}: ${lastMessageText}`;
+            }
+        }
+
+        const chatPhoto = chat.photoURL || '/images/default-avatar.svg';
+        const chatName = chat.name || 'Người dùng';
+        const lastMessageTime = lastMessage ? this.formatTime(lastMessage.timestamp) : '';
+        const unreadCount = this.unreadMessages[chat.id] || 0;
+
+        let onlineStatus = '';
+        if (chat.type === 'private') {
+            const otherUserId = Object.keys(chat.members).find(id => id !== currentUser.uid);
+            if (otherUserId && this.users[otherUserId]?.status === 'online') {
+                onlineStatus = '<div class="online-indicator"></div>';
+            }
+        }
+
+        const existingItem = existingItems.get(chat.id);
+        if (existingItem) {
+            const imgEl = existingItem.querySelector('.chat-avatar img');
+            if (imgEl && imgEl.src !== chatPhoto) imgEl.src = chatPhoto;
+
+            const nameEl = existingItem.querySelector('.chat-name');
+            if (nameEl && nameEl.firstChild.textContent.trim() !== chatName) {
+                nameEl.firstChild.textContent = chatName;
+            }
+
+            const lastMsgEl = existingItem.querySelector('.chat-last-message');
+            if (lastMsgEl && lastMsgEl.textContent !== lastMessageText) {
+                lastMsgEl.textContent = lastMessageText;
+            }
+
+            const timeEl = existingItem.querySelector('.chat-time');
+            if (timeEl && timeEl.textContent !== lastMessageTime) {
+                timeEl.textContent = lastMessageTime;
+            }
+
+            const unreadBadge = existingItem.querySelector('.unread-badge');
+            if (unreadCount > 0) {
+                if (unreadBadge) unreadBadge.textContent = unreadCount;
+                else {
+                    const badge = document.createElement('div');
+                    badge.className = 'unread-badge';
+                    badge.textContent = unreadCount;
+                    existingItem.appendChild(badge);
+                }
+            } else if (unreadBadge) {
+                unreadBadge.remove();
+            }
+
+            if (this.currentChatId === chat.id) existingItem.classList.add('active');
+            else existingItem.classList.remove('active');
+
+            existingItems.delete(chat.id);
+        } else {
+            const chatItem = document.createElement('div');
+            chatItem.className = 'chat-item';
+            if (this.currentChatId === chat.id) chatItem.classList.add('active');
+            chatItem.dataset.id = chat.id;
+            chatItem.innerHTML = `
+                <div class="chat-avatar">
+                    <img src="${chatPhoto}" alt="${chatName}">
+                    ${onlineStatus}
+                </div>
+                <div class="chat-details">
+                    <div class="chat-name">
+                        ${chatName}
+                        <span class="chat-time">${lastMessageTime}</span>
+                    </div>
+                    <div class="chat-last-message">${lastMessageText}</div>
+                </div>
+                ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+            `;
+            chatItem.addEventListener('click', () => this.selectChat(chat.id));
+            chatListElement.appendChild(chatItem);
+        }
+    });
+
+    existingItems.forEach(item => item.remove());
+};
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+    if (window.chat) {
+        // Ghi đè renderChatList
+        window.chat.renderChatList = function () {
+            const chatListElement = document.getElementById('chat-list');
+            const currentUser = authManager.getCurrentUser();
+            if (!currentUser || !chatListElement) return;
+
+            const sortedChats = Object.values(this.chats).sort((a, b) => {
+                const aLast = this.getLastMessage(a.id);
+                const bLast = this.getLastMessage(b.id);
+                const aTime = aLast ? aLast.timestamp : 0;
+                const bTime = bLast ? bLast.timestamp : 0;
+                return bTime - aTime;
+            });
+
+            const existingItems = new Map();
+            chatListElement.querySelectorAll('.chat-item').forEach(item => {
+                existingItems.set(item.dataset.id, item);
+            });
+
+            sortedChats.forEach(chat => {
+                if (!chat.members || !chat.members[currentUser.uid]) return;
+
+                const lastMessage = this.getLastMessage(chat.id);
+                let lastMessageText = '';
+                if (lastMessage) {
+                    lastMessageText = lastMessage.type === 'image' ? ' Hình ảnh' : lastMessage.text;
+                    if (chat.type === 'group' && lastMessage.senderId !== 'system') {
+                        const senderName = lastMessage.senderName || this.getUserName(lastMessage.senderId);
+                        lastMessageText = `${senderName}: ${lastMessageText}`;
+                    }
+                }
+
+                const chatPhoto = chat.photoURL || '/images/default-avatar.svg';
+                const chatName = chat.name || 'Người dùng';
+                const lastMessageTime = lastMessage ? this.formatTime(lastMessage.timestamp) : '';
+                const unreadCount = this.unreadMessages[chat.id] || 0;
+
+                const existingItem = existingItems.get(chat.id);
+                if (existingItem) {
+                    //  Update in place
+                    const imgEl = existingItem.querySelector('.chat-avatar img');
+                    if (imgEl && imgEl.src !== chatPhoto) imgEl.src = chatPhoto;
+
+                    const nameEl = existingItem.querySelector('.chat-name');
+                    if (nameEl && nameEl.firstChild.textContent.trim() !== chatName) {
+                        nameEl.firstChild.textContent = chatName;
+                    }
+
+                    const lastMsgEl = existingItem.querySelector('.chat-last-message');
+                    if (lastMsgEl && lastMsgEl.textContent !== lastMessageText) {
+                        lastMsgEl.textContent = lastMessageText;
+                    }
+
+                    const timeEl = existingItem.querySelector('.chat-time');
+                    if (timeEl && timeEl.textContent !== lastMessageTime) {
+                        timeEl.textContent = lastMessageTime;
+                    }
+
+                    const unreadBadge = existingItem.querySelector('.unread-badge');
+                    if (unreadCount > 0) {
+                        if (unreadBadge) unreadBadge.textContent = unreadCount;
+                        else {
+                            const badge = document.createElement('div');
+                            badge.className = 'unread-badge';
+                            badge.textContent = unreadCount;
+                            existingItem.appendChild(badge);
+                        }
+                    } else if (unreadBadge) unreadBadge.remove();
+
+                    if (this.currentChatId === chat.id) existingItem.classList.add('active');
+                    else existingItem.classList.remove('active');
+
+                    existingItems.delete(chat.id);
+                } else {
+                    const chatItem = document.createElement('div');
+                    chatItem.className = 'chat-item';
+                    chatItem.dataset.id = chat.id;
+                    if (this.currentChatId === chat.id) chatItem.classList.add('active');
+                    chatItem.innerHTML = `
+                        <div class="chat-avatar">
+                            <img src="${chatPhoto}" alt="${chatName}">
+                        </div>
+                        <div class="chat-details">
+                            <div class="chat-name">
+                                ${chatName}
+                                <span class="chat-time">${lastMessageTime}</span>
+                            </div>
+                            <div class="chat-last-message">${lastMessageText}</div>
+                        </div>
+                        ${unreadCount > 0 ? `<div class="unread-badge">${unreadCount}</div>` : ''}
+                    `;
+                    chatItem.addEventListener('click', () => this.selectChat(chat.id));
+                    chatListElement.appendChild(chatItem);
+                }
+            });
+
+            // Xóa item không còn trong danh sách
+            existingItems.forEach(item => item.remove());
+        };
+
+        // Ghi đè updateCurrentChatInfo
+        window.chat.updateCurrentChatInfo = function () {
+            const chat = this.chats[this.currentChatId];
+            if (!chat) return;
+
+            const chatAvatar = document.getElementById('current-chat-avatar');
+            if (chatAvatar && chat.photoURL && chatAvatar.src !== chat.photoURL) {
+                chatAvatar.src = chat.photoURL;
+            }
+
+            const chatNameEl = document.getElementById('current-chat-name');
+            if (chatNameEl && chat.name && chatNameEl.textContent.trim() !== chat.name) {
+                chatNameEl.textContent = chat.name;
+            }
+        };
     }
-  }, 300);
 });
 </script>
+
+
+
+
+
 
 
 
 </body>
 
 </html>
+
+
+
 
 
 
