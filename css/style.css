@@ -1680,3 +1680,56 @@ input:checked + .slider:before {
         z-index: 1;
     }
 }
+.chat-link {
+  color: #00c3ff;
+  text-decoration: underline;
+  word-break: break-word;
+}
+.chat-link:hover {
+  text-decoration: none;
+}
+.chat-area {
+  background-color: #f7f7f7; /* fallback khi chưa có ảnh */
+  background-repeat: no-repeat;
+}
+.predefined-bg-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 8px;
+  margin-top: 10px;
+}
+.predefined-bg-list img {
+  width: 100%;
+  height: 60px;
+  object-fit: cover;
+  cursor: pointer;
+  border-radius: 6px;
+  transition: 0.2s ease;
+}
+.chat-area {
+  --incoming-bubble-color: #f1f1f1;
+  --outgoing-bubble-color: #0084ff;
+}
+
+.chat-area .message.incoming .message-bubble {
+  background-color: var(--incoming-bubble-color);
+  color: #000;
+}
+
+.chat-area .message.outgoing .message-bubble {
+  background-color: var(--outgoing-bubble-color);
+  color: #fff;
+}
+
+/* header + input mặc định */
+.chat-header {
+  background-color: #ffffff;
+  color: rgb(0, 0, 0);
+  transition: background 0.3s ease;
+}
+
+.message-input-container {
+  background-color: #f1f1f1;
+  transition: background 0.3s ease;
+}
+
