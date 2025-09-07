@@ -1069,12 +1069,67 @@ document.addEventListener("DOMContentLoaded", () => {
   }, 15000);
 });
 </script>
+<script>
+function escapeHTML(text) {
+    if (typeof text !== "string") return "";
+    return text
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;");
+}
 
+function previewAndSend(chatInstance, chatId, messageInput) {
+    let rawText = messageInput.value;
+    if (!rawText || typeof rawText !== "string") return;
+
+    rawText = rawText.trim();
+    if (!rawText) return;
+
+    //  Escape trước
+    let safeText = escapeHTML(rawText);
+
+    //  Nếu có thẻ dạng &lt;...&gt; thì bọc vào <code> để hiển thị trước
+    if (/&lt;[^&]+&gt;/.test(safeText)) {
+        safeText = `<code>${safeText}</code>`;
+    }
+
+    //  Cho người dùng thấy preview ngay trong input (chỉ text thuần)
+    messageInput.value = safeText.replace(/<[^>]+>/g, ""); // chỉ hiển thị text bên trong code
+
+    //  Gửi nội dung đã escape lên server
+    chatInstance._originalSendMessage(chatId, safeText);
+}
+
+if (chat && typeof chat.sendMessage === "function") {
+    // Lưu hàm gốc
+    chat._originalSendMessage = chat.sendMessage;
+
+    // Ghi đè lại
+    chat.sendMessage = function(chatId, messageText) {
+        const messageInput = document.getElementById("message-text");
+        if (!messageInput) return;
+        previewAndSend(this, chatId || this.currentChatId, messageInput);
+    };
+}
+
+// Ghi đè renderMessage để luôn hiển thị đúng dạng đã gửi
+if (chat.renderMessage) {
+    const originalRenderMessage = chat.renderMessage;
+    chat.renderMessage = function(message) {
+        const container = document.createElement("div");
+        container.className = "message-bubble";
+
+        container.innerHTML = message.text || "";
+        return container;
+    };
+}
+</script>
 
 
 </body>
 
 </html>
+
 
 
 
