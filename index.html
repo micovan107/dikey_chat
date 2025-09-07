@@ -389,7 +389,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const snap = await firebase.database()
         .ref("chats/" + chatId + "/type")
         .once("value");
-      return snap.val() !== "group"; // chỉ true nếu chat riêng
+      return snap.val() !== "group"; 
     } catch (err) {
       console.warn("Không lấy được chatType:", err);
       return false;
@@ -434,7 +434,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const messagesContainer = document.getElementById("messages-container");
 
   function isPureTextBubble(el) {
-    // Nếu có bất kỳ thẻ con nào bên trong -> không phải text thuần
+    
     return Array.from(el.childNodes).every(node => node.nodeType === Node.TEXT_NODE);
   }
 
@@ -506,14 +506,62 @@ document.addEventListener("click", (e) => {
     if (window.chat && typeof window.chat.showChangeChatBackgroundModal === "function") {
       window.chat.showChangeChatBackgroundModal();
     } else {
-      console.warn("⚠️ Chat chưa sẵn sàng hoặc chưa có hàm showChangeChatBackgroundModal");
+      console.warn(" Chat chưa sẵn sàng hoặc chưa có hàm showChangeChatBackgroundModal");
     }
   }
 });
 </script>
 
-
 <script>
+async function applySavedChatTheme(chatId) {
+  if (!chatId || !window.firebase) return;
+
+  try {
+    const snapshot = await firebase.database().ref("chats/" + chatId).once("value");
+    const data = snapshot.val();
+    if (!data) return;
+
+    const chatArea = document.querySelector(".chat-area");
+    const chatHeader = document.querySelector(".chat-header");
+    const messageInputContainer = document.querySelector(".message-input-container");
+
+    // Reset cục bộ
+    if (chatArea) {
+      chatArea.style.removeProperty("--incoming-bubble-color");
+      chatArea.style.removeProperty("--outgoing-bubble-color");
+      chatArea.style.backgroundImage = "none";
+    }
+    if (chatHeader) chatHeader.style.removeProperty("background-color");
+    if (messageInputContainer) messageInputContainer.style.removeProperty("background-color");
+
+    // Ảnh nền
+    if (data.background && chatArea) {
+      chatArea.style.backgroundImage = `url('${data.background}')`;
+      chatArea.style.backgroundSize = "cover";
+      chatArea.style.backgroundPosition = "center";
+    }
+
+    // Theme
+    if (data.theme) {
+      if (chatArea) {
+        if (data.theme["--incoming-bubble-color"])
+          chatArea.style.setProperty("--incoming-bubble-color", data.theme["--incoming-bubble-color"]);
+        if (data.theme["--outgoing-bubble-color"])
+          chatArea.style.setProperty("--outgoing-bubble-color", data.theme["--outgoing-bubble-color"]);
+      }
+      if (chatHeader && data.theme["--header-bg"]) {
+        chatHeader.style.backgroundColor = data.theme["--header-bg"];
+        chatHeader.style.color = data.theme["--header-text"] || "#fff";
+      }
+      if (messageInputContainer && data.theme["--input-bg"]) {
+        messageInputContainer.style.backgroundColor = data.theme["--input-bg"];
+      }
+    }
+  } catch (err) {
+    console.error("Không thể load theme:", err);
+  }
+}
+
 document.addEventListener("click", (e) => {
   if (e.target.closest("#change-bg-button")) {
     setTimeout(() => {
@@ -522,17 +570,79 @@ document.addEventListener("click", (e) => {
       const saveBgBtn = document.getElementById("save-bg-button");
       if (!bgContainer || !saveBgBtn) return;
 
-      // Xóa danh sách cũ (tránh bị nhân đôi khi mở lại modal)
       document.querySelectorAll(".predefined-bg-list").forEach(el => el.remove());
 
-      // Danh sách ảnh có sẵn
       const predefinedBackgrounds = [
-        "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757235543_lazi_172435.png&w=380&h=280",
-        "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757235138_lazi_406839.png&w=380&h=280",
-        "https://images.unsplash.com/photo-1519125323398-675f0ddb6308?w=400&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1507525428034-b723cf961d3e?w=400&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1501785888041-af3ef285b470?w=400&auto=format&fit=crop",
-        "https://images.unsplash.com/photo-1496307042754-b4aa456c4a2d?w=400&auto=format&fit=crop"
+        {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757254813_lazi_363187.png&w=380&h=280",
+          theme: {
+            "--incoming-bubble-color": "#f3fffc",
+            "--outgoing-bubble-color": "#c6a26e",
+            "--header-bg": "#fff",
+            "--header-text": "#000000",
+            "--input-bg": "#fff"
+          }
+        },
+        {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757254480_lazi_513609.png&w=380&h=280",
+          theme: {
+            "--incoming-bubble-color": "#fff5f5",
+            "--outgoing-bubble-color": "#f9005a",
+            "--header-bg": "#ffecf7",
+            "--header-text": "#000000",
+            "--input-bg": "#fdd6e8"
+          }
+        },
+        {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757254151_lazi_236511.png&w=380&h=280",
+          theme: {
+            "--incoming-bubble-color": "#fff3e2",
+            "--outgoing-bubble-color": "#c6a26e",
+            "--header-bg": "#ffddad",
+            "--header-text": "#000000",
+            "--input-bg": "#ffddad"
+          }
+        },
+        {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757253725_lazi_972070.png&w=380&h=280",
+          theme: {
+            "--incoming-bubble-color": "#ffe3fe",
+            "--outgoing-bubble-color": "#ab00a8",
+            "--header-bg": "#f9cbef",
+            "--header-text": "#000000",
+            "--input-bg": "#f9cbef"
+          }
+        },
+        {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757253051_lazi_839945.png&w=380&h=280",
+          theme: {
+            "--incoming-bubble-color": "#ffffff",
+            "--outgoing-bubble-color": "#385898",
+            "--header-bg": "#55ff8e",
+            "--header-text": "#000000",
+            "--input-bg": "#55ff8e"
+          }
+        },
+        {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757235543_lazi_172435.png&w=380&h=280",
+          theme: {
+            "--incoming-bubble-color": "#ffffff",
+            "--outgoing-bubble-color": "#00431c",
+            "--header-bg": "#70b871",
+            "--header-text": "#000000",
+            "--input-bg": "#37843e"
+          }
+        },
+        {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757235138_lazi_406839.png&w=380&h=280",
+          theme: {
+            "--incoming-bubble-color": "#ffffff",
+            "--outgoing-bubble-color": "#9f1aff",
+            "--header-bg": "#81d6ff",
+            "--header-text": "#000000",
+            "--input-bg": "#caf3fe"
+          }
+        }
       ];
 
       const list = document.createElement("div");
@@ -544,24 +654,27 @@ document.addEventListener("click", (e) => {
         marginTop: "10px"
       });
 
-      predefinedBackgrounds.forEach(url => {
+      predefinedBackgrounds.forEach(item => {
         const img = document.createElement("img");
-        img.src = url;
+        img.src = item.url;
         img.style.cssText =
           "width:100%;height:60px;object-fit:cover;border-radius:6px;cursor:pointer;border:1px solid #ccc;";
         img.addEventListener("click", () => {
           list.querySelectorAll("img").forEach(el => (el.style.outline = "none"));
           img.style.outline = "2px solid #2196f3";
-          bgPreview.src = url;
+          bgPreview.src = item.url;
           bgPreview.style.display = "block";
-          bgPreview.dataset.selectedUrl = url;
+          bgPreview.dataset.selectedUrl = item.url;
+          bgPreview.dataset.selectedTheme = JSON.stringify(item.theme);
+
+          // Preview trong chat hiện tại
+          previewTheme(item.theme);
         });
         list.appendChild(img);
       });
 
       bgContainer.appendChild(list);
 
-      // Sự kiện LƯU ảnh nền
       saveBgBtn.onclick = async () => {
         let chatId = window.chat?.currentChatId;
         if (!chatId) {
@@ -574,47 +687,186 @@ document.addEventListener("click", (e) => {
         }
 
         const selectedUrl = bgPreview.dataset.selectedUrl;
+        const selectedTheme = bgPreview.dataset.selectedTheme;
         if (!selectedUrl) {
           alert("Hãy chọn một ảnh trước khi lưu!");
           return;
         }
 
         try {
-          // 1️⃣ Lưu vào Firebase
-          await firebase.database().ref("chats/" + chatId + "/background").set(selectedUrl);
+          await firebase.database().ref("chats/" + chatId).update({
+            background: selectedUrl,
+            theme: selectedTheme ? JSON.parse(selectedTheme) : null
+          });
 
-          // 2️⃣ Cập nhật giao diện ngay
-          const chatArea = document.querySelector(".chat-area");
-          if (chatArea) {
-            chatArea.style.backgroundImage = `url('${selectedUrl}')`;
-            chatArea.style.backgroundSize = "cover";
-            chatArea.style.backgroundPosition = "center";
-          }
-
-          // 3️⃣ Gọi lại applyChatBackground (đồng bộ logic trong Chat class)
-          if (window.chat) {
-            window.chat.currentChatId = chatId;
-            window.chat.applyChatBackground?.();
-          }
-
-          // 4️⃣ Thông báo thành công
-          if (window.ui?.showToast) {
-            window.ui.showToast("success", "Ảnh nền đã được cập nhật!");
-          }
-
-          // 5️⃣ Đóng modal
+          applySavedChatTheme(chatId);
+          if (window.ui?.showToast) window.ui.showToast("success", "Chủ đề đã được áp dụng!");
           saveBgBtn.closest(".modal-content").parentElement.remove();
         } catch (err) {
-          console.error("Lỗi khi lưu ảnh nền:", err);
-          if (window.ui?.showToast) {
-            window.ui.showToast("error", "Không thể lưu ảnh nền, vui lòng thử lại!");
-          }
+          console.error("Lỗi khi lưu chủ đề:", err);
         }
       };
     }, 100);
   }
 });
+
+function previewTheme(themeObj) {
+  const chatArea = document.querySelector(".chat-area");
+  const chatHeader = document.querySelector(".chat-header");
+  const messageInputContainer = document.querySelector(".message-input-container");
+
+  if (!themeObj) return;
+  if (chatArea) {
+    if (themeObj["--incoming-bubble-color"])
+      chatArea.style.setProperty("--incoming-bubble-color", themeObj["--incoming-bubble-color"]);
+    if (themeObj["--outgoing-bubble-color"])
+      chatArea.style.setProperty("--outgoing-bubble-color", themeObj["--outgoing-bubble-color"]);
+  }
+  if (chatHeader && themeObj["--header-bg"]) {
+    chatHeader.style.backgroundColor = themeObj["--header-bg"];
+    chatHeader.style.color = themeObj["--header-text"] || "#fff";
+  }
+  if (messageInputContainer && themeObj["--input-bg"]) {
+    messageInputContainer.style.backgroundColor = themeObj["--input-bg"];
+  }
+}
+
+// Load theme khi mở chat
+document.addEventListener("DOMContentLoaded", () => {
+  const activeItem = document.querySelector(".chat-item.active");
+  if (activeItem) applySavedChatTheme(activeItem.dataset.id);
+});
+
+document.addEventListener("click", (e) => {
+  const chatItem = e.target.closest(".chat-item");
+  if (chatItem) applySavedChatTheme(chatItem.dataset.id);
+});
 </script>
+
+<script>
+function appendSystemMessage(text) {
+  const chatContainer = document.querySelector("#messages-container");
+  if (!chatContainer) return;
+
+  const msgDiv = document.createElement("div");
+  msgDiv.className = "message system";
+  msgDiv.innerHTML = `<div class="message-bubble" data-linkified="true">${text}</div>`;
+  chatContainer.appendChild(msgDiv);
+  chatContainer.scrollTop = chatContainer.scrollHeight;
+}
+
+// Áp dụng theme vào giao diện
+async function applySavedChatTheme(chatId, data = null) {
+  if (!chatId) return;
+
+  const chatArea = document.querySelector(".chat-area");
+  const chatHeader = document.querySelector(".chat-header");
+  const messageInputContainer = document.querySelector(".message-input-container");
+
+  // Reset trước khi áp dụng
+  if (chatArea) {
+    chatArea.style.removeProperty("--incoming-bubble-color");
+    chatArea.style.removeProperty("--outgoing-bubble-color");
+    chatArea.style.backgroundImage = "none";
+  }
+  if (chatHeader) chatHeader.style.removeProperty("background-color");
+  if (messageInputContainer) messageInputContainer.style.removeProperty("background-color");
+
+  // Nếu chưa có data thì lấy từ Firebase
+  if (!data && window.firebase) {
+    const snapshot = await firebase.database().ref("chats/" + chatId).once("value");
+    data = snapshot.val();
+  }
+  if (!data) return;
+
+  if (data.background && chatArea) {
+    chatArea.style.backgroundImage = `url('${data.background}')`;
+    chatArea.style.backgroundSize = "cover";
+    chatArea.style.backgroundPosition = "center";
+  }
+
+  if (data.theme) {
+    if (chatArea) {
+      if (data.theme["--incoming-bubble-color"])
+        chatArea.style.setProperty("--incoming-bubble-color", data.theme["--incoming-bubble-color"]);
+      if (data.theme["--outgoing-bubble-color"])
+        chatArea.style.setProperty("--outgoing-bubble-color", data.theme["--outgoing-bubble-color"]);
+    }
+    if (chatHeader && data.theme["--header-bg"]) {
+      chatHeader.style.backgroundColor = data.theme["--header-bg"];
+      chatHeader.style.color = data.theme["--header-text"] || "#fff";
+    }
+    if (messageInputContainer && data.theme["--input-bg"]) {
+      messageInputContainer.style.backgroundColor = data.theme["--input-bg"];
+    }
+  }
+}
+
+// Lắng nghe realtime cho mọi chat
+function listenChatThemeRealtime(chatId) {
+  if (!chatId || !window.firebase) return;
+  const ref = firebase.database().ref("chats/" + chatId);
+  ref.off("value");
+  ref.on("value", snapshot => {
+    const newData = snapshot.val();
+    if (!newData) return;
+
+    if (window.chat?.currentChatId === chatId) {
+      // Nếu có sự thay đổi theme -> hiển thị system message
+      if (window.lastChatTheme && window.lastChatTheme[chatId]) {
+        const oldData = window.lastChatTheme[chatId];
+        if (
+          oldData.background !== newData.background ||
+          JSON.stringify(oldData.theme) !== JSON.stringify(newData.theme)
+        ) {
+          appendSystemMessage(`${newData.lastModifiedBy || "Ai đó"} đã đổi chủ đề`);
+        }
+      }
+      applySavedChatTheme(chatId, newData);
+    }
+
+    window.lastChatTheme = window.lastChatTheme || {};
+    window.lastChatTheme[chatId] = newData;
+  });
+}
+
+
+async function saveChatTheme(chatId, selectedUrl, selectedTheme) {
+  const currentUserName = window.currentUser?.displayName || "Ai đó";
+  await firebase.database().ref("chats/" + chatId).update({
+    background: selectedUrl,
+    theme: selectedTheme ? JSON.parse(selectedTheme) : null,
+    lastModifiedBy: currentUserName,
+    lastModifiedAt: Date.now()
+  });
+
+  applySavedChatTheme(chatId);
+}
+
+// Gắn listener khi click vào chat
+document.addEventListener("click", (e) => {
+  const chatItem = e.target.closest(".chat-item");
+  if (chatItem) {
+    const chatId = chatItem.dataset.id;
+    listenChatThemeRealtime(chatId);
+    applySavedChatTheme(chatId);
+  }
+});
+
+// Khi load trang
+document.addEventListener("DOMContentLoaded", () => {
+  const activeItem = document.querySelector(".chat-item.active");
+  if (activeItem) {
+    listenChatThemeRealtime(activeItem.dataset.id);
+    applySavedChatTheme(activeItem.dataset.id);
+  }
+});
+</script>
+
+
+
+
+
 
 
 
@@ -980,7 +1232,7 @@ function setAvatar(imgEl, key, photoURL, fallback = "/images/default-avatar.svg"
   const hasPhoto = !!photoURL;
   const finalURL = hasPhoto ? photoURL : fallback;
 
-  // Nếu đã cache và giống finalURL → không đổi
+  
   if (window.avatarCache[key] && window.avatarCache[key] === finalURL) {
     if (imgEl.src !== finalURL) imgEl.src = finalURL;
     return;
@@ -1043,12 +1295,12 @@ chat.loadChats = function() {
     // Lắng nghe danh sách chats
     dbRefs.chats.orderByChild(`members/${currentUser.uid}`).equalTo(true).on("value", snapshot => {
         const chatsData = snapshot.val() || {};
-        this.chats = {}; // clear cũ để tránh dữ liệu thừa
+        this.chats = {}; 
 
         Object.keys(chatsData).forEach(chatId => {
             this.chats[chatId] = { ...chatsData[chatId], id: chatId };
 
-            //  Auto-load chat details + listener messages
+            
             if (!this.chatListeners[`chat_${chatId}`]) {
                 this.loadChatDetails(chatId);
             }
@@ -1137,12 +1389,12 @@ function previewAndSend(chatInstance, chatId, messageInput) {
     //  Escape trước
     let safeText = escapeHTML(rawText);
 
-    //  Nếu có thẻ dạng &lt;...&gt; thì bọc vào <code> để hiển thị trước
+   
     if (/&lt;[^&]+&gt;/.test(safeText)) {
         safeText = `<code>${safeText}</code>`;
     }
 
-    //  Cho người dùng thấy preview ngay trong input (chỉ text thuần)
+    
     messageInput.value = safeText.replace(/<[^>]+>/g, ""); // chỉ hiển thị text bên trong code
 
     //  Gửi nội dung đã escape lên server
@@ -1161,7 +1413,7 @@ if (chat && typeof chat.sendMessage === "function") {
     };
 }
 
-// Ghi đè renderMessage để luôn hiển thị đúng dạng đã gửi
+
 if (chat.renderMessage) {
     const originalRenderMessage = chat.renderMessage;
     chat.renderMessage = function(message) {
@@ -1185,6 +1437,7 @@ if (chat.renderMessage) {
 </body>
 
 </html>
+
 
 
 
