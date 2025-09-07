@@ -827,13 +827,254 @@ document.addEventListener("DOMContentLoaded", () => {
 
 
 
+<script>
+const originalLoadChatDetails = chat.loadChatDetails;
+chat.loadChatDetails = function(chatId) {
+    if (this.chatListeners[`chat_${chatId}`]) {
+        this.chatListeners[`chat_${chatId}`]();
+    }
+
+    const chatRef = dbRefs.chats.child(chatId);
+    const currentUser = authManager.getCurrentUser();
+
+    // Lắng nghe thay đổi thông tin chat (name, photo, status)
+    this.chatListeners[`chat_${chatId}`] = chatRef.on("value", snapshot => {
+        const chatData = snapshot && snapshot.val ? snapshot.val() : null;
+        if (!chatData) return;
+
+        const prevChat = this.chats[chatId] || {};
+        this.chats[chatId] = { ...chatData, id: chatId };
+
+        // Nếu chat riêng -> đồng bộ với user info
+        if (chatData.type === "private") {
+            const otherUserId = Object.keys(chatData.members || {}).find(id => id !== currentUser.uid);
+            const otherUser = this.users[otherUserId];
+            if (otherUser) {
+                this.chats[chatId].name = otherUser.displayName || "Người dùng";
+                this.chats[chatId].photoURL = otherUser.photoURL || "/images/default-avatar.svg";
+            }
+        }
+
+        //  Chỉ update header khi thông tin chat thay đổi
+        if (this.currentChatId === chatId) {
+            if (
+                prevChat.name !== this.chats[chatId].name ||
+                prevChat.photoURL !== this.chats[chatId].photoURL ||
+                prevChat.status !== this.chats[chatId].status
+            ) {
+                this.updateCurrentChatInfo();
+            }
+        }
+
+        if (!prevChat.id) {
+            this.renderChatList();
+        } else {
+            this.updateSingleChatItem(chatId);
+        }
+    });
+
+    //  Lắng nghe tin nhắn mới, chỉ append thay vì reload toàn bộ
+    chatRef.child("messages").limitToLast(50).on("child_added", snapshot => {
+        const message = snapshot.val();
+        if (!message) return;
+        this.appendMessage(chatId, message); // <-- Bạn cần có hàm appendMessage
+        if (chatId === this.currentChatId) this.scrollToBottom();
+    });
+};
+
+// Hàm updateSingleChatItem giữ nguyên (như bạn đang dùng)
+chat.updateSingleChatItem = function(chatId) {
+    const chatData = this.chats[chatId];
+    const chatItem = document.querySelector(`.chat-item[data-id="${chatId}"]`);
+    if (!chatItem) return;
+
+    const currentUser = authManager.getCurrentUser();
+
+    let chatPhoto = chatData.photoURL;
+    let chatName = chatData.name;
+
+    if (chatData.type === "private") {
+        const otherUserId = Object.keys(chatData.members || {}).find(id => id !== currentUser.uid);
+        const otherUser = this.users[otherUserId];
+        if (otherUser) {
+            chatPhoto = otherUser.photoURL || "/images/default-avatar.svg";
+            chatName = otherUser.displayName || "Người dùng";
+        }
+    }
+
+    const lastMessage = this.getLastMessage(chatId);
+    const lastMessageTime = lastMessage ? this.formatTime(lastMessage.timestamp) : "";
+    let lastMessageText = "";
+
+    if (lastMessage) {
+        lastMessageText = lastMessage.type === "image" ? " Hình ảnh" : lastMessage.text;
+        if (chatData.type === "group" && lastMessage.senderId !== "system") {
+            const senderName = lastMessage.senderName || this.getUserName(lastMessage.senderId);
+            lastMessageText = `${senderName}: ${lastMessageText}`;
+        }
+    }
+
+    chatItem.querySelector(".chat-avatar img").src = chatPhoto || "/images/default-avatar.svg";
+    chatItem.querySelector(".chat-name").firstChild.textContent = chatName || "Người dùng";
+    chatItem.querySelector(".chat-last-message").textContent = lastMessageText;
+    chatItem.querySelector(".chat-time").textContent = lastMessageTime;
+};
+</script>
+
+
+<script>
+window.avatarCache = window.avatarCache || {};
+
+function setAvatar(imgEl, key, photoURL, fallback = "/images/default-avatar.svg") {
+  if (!imgEl) return;
+
+  const hasPhoto = !!photoURL;
+  const finalURL = hasPhoto ? photoURL : fallback;
+
+  // Nếu đã cache và giống finalURL → không đổi
+  if (window.avatarCache[key] && window.avatarCache[key] === finalURL) {
+    if (imgEl.src !== finalURL) imgEl.src = finalURL;
+    return;
+  }
+
+  imgEl.src = finalURL;
+
+  //  Chỉ cache nếu thực sự có ảnh user
+  if (hasPhoto) {
+    window.avatarCache[key] = finalURL;
+  }
+}
+
+// Ghi đè updateSingleChatItem
+const originalUpdateSingleChatItem = chat.updateSingleChatItem;
+chat.updateSingleChatItem = function(chatId) {
+  const chatData = this.chats[chatId];
+  const chatItem = document.querySelector(`.chat-item[data-id="${chatId}"]`);
+  if (!chatItem || !chatData) return;
+
+  const currentUser = authManager.getCurrentUser();
+  let chatPhoto = chatData.photoURL;
+  let chatName = chatData.name;
+
+  if (chatData.type === "private") {
+    const otherUserId = Object.keys(chatData.members || {}).find(id => id !== currentUser.uid);
+    const otherUser = this.users[otherUserId];
+    if (otherUser) {
+      chatPhoto = otherUser.photoURL;
+      chatName = otherUser.displayName || "Người dùng";
+      setAvatar(chatItem.querySelector(".chat-avatar img"), otherUserId, chatPhoto);
+    }
+  } else {
+    // fallback nhóm
+    setAvatar(chatItem.querySelector(".chat-avatar img"), chatId, chatPhoto, "data:image/png;base64,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");
+  }
+
+  const lastMessage = this.getLastMessage(chatId);
+  const lastMessageTime = lastMessage ? this.formatTime(lastMessage.timestamp) : "";
+  let lastMessageText = "";
+
+  if (lastMessage) {
+    lastMessageText = lastMessage.type === "image" ? " Hình ảnh" : lastMessage.text;
+    if (chatData.type === "group" && lastMessage.senderId !== "system") {
+      const senderName = lastMessage.senderName || this.getUserName(lastMessage.senderId);
+      lastMessageText = `${senderName}: ${lastMessageText}`;
+    }
+  }
+
+  chatItem.querySelector(".chat-name").firstChild.textContent = chatName || "Nhóm chưa đặt tên";
+  chatItem.querySelector(".chat-last-message").textContent = lastMessageText;
+  chatItem.querySelector(".chat-time").textContent = lastMessageTime;
+};
+</script>
+<script>
+chat.loadChats = function() {
+    const currentUser = authManager.getCurrentUser();
+    if (!currentUser) return;
+
+    // Lắng nghe danh sách chats
+    dbRefs.chats.orderByChild(`members/${currentUser.uid}`).equalTo(true).on("value", snapshot => {
+        const chatsData = snapshot.val() || {};
+        this.chats = {}; // clear cũ để tránh dữ liệu thừa
+
+        Object.keys(chatsData).forEach(chatId => {
+            this.chats[chatId] = { ...chatsData[chatId], id: chatId };
+
+            //  Auto-load chat details + listener messages
+            if (!this.chatListeners[`chat_${chatId}`]) {
+                this.loadChatDetails(chatId);
+            }
+        });
+
+        // Render lại danh sách chat sau khi đã load hết
+        this.updateChatUserInfo(() => this.renderChatList());
+    });
+};
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  console.log(" đang chờ nhóm chat mặc định xuất hiện...");
+
+  function safeClick(el) {
+    if (!el) return;
+    console.log(" Click:", el.dataset?.id || el.textContent.trim());
+    el.dispatchEvent(new MouseEvent("click", { bubbles: true, cancelable: true }));
+  }
+
+  const chatList = document.getElementById("chat-list");
+  if (!chatList) {
+    console.error(" Không tìm thấy #chat-list! Kiểm tra lại html");
+    return;
+  }
+
+  let clickedOnce = false;
+  const observer = new MutationObserver(() => {
+    const defaultChat = document.querySelector('.chat-item[data-id="congdongviet"]');
+    if (defaultChat && !clickedOnce) {
+      clickedOnce = true;
+      console.log(" Nhóm mặc định render xong thì auto-click");
+
+      setTimeout(() => {
+        safeClick(defaultChat);
+
+        // Sau khi click nhóm mặc định thì chờ các chat khác load xong
+        const waitOtherChats = new MutationObserver(() => {
+          const allChats = document.querySelectorAll(".chat-item");
+          if (allChats.length > 1) {
+            waitOtherChats.disconnect();
+            console.log(` Đã load ${allChats.length} chat → click tất cả`);
+
+            allChats.forEach((chatItem, i) => {
+              setTimeout(() => safeClick(chatItem), i * 120);
+            });
+
+            setTimeout(() => {
+              console.log(" Quay về nhóm mặc định");
+              safeClick(defaultChat);
+            }, allChats.length * 150 + 500);
+          }
+        });
+
+        waitOtherChats.observe(chatList, { childList: true, subtree: true });
+      }, 300);
+    }
+  });
+
+  observer.observe(chatList, { childList: true, subtree: true });
+
+  // Thêm fallback timeout để tránh chờ vô hạn
+  setTimeout(() => {
+    if (!clickedOnce) {
+      console.warn(" wow");
+    }
+  }, 15000);
+});
+</script>
 
 
 
 </body>
 
 </html>
-
 
 
 
