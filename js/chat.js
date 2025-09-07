@@ -19,19 +19,38 @@ class Chat {
     /**
      * Áp dụng ảnh nền cho khung chat từ localStorage
      */
-    applyChatBackground() {
-        const chatArea = document.querySelector('.chat-area');
-        const bgImage = localStorage.getItem('chatBackgroundImage');
-        const bgColor = localStorage.getItem('chatBackgroundColor');
-        
-        if (bgImage) {
-            chatArea.style.backgroundImage = `url(${bgImage})`;
-            chatArea.style.backgroundColor = 'transparent';
-        } else if (bgColor) {
-            chatArea.style.backgroundImage = 'none';
-            chatArea.style.backgroundColor = bgColor;
-        }
-    }
+applyChatBackground() {
+  const chatArea = document.querySelector('.chat-area');
+  const chatId = this.currentChatId;
+  if (!chatArea || !chatId) return;
+
+  // Lấy ảnh nền từ Firebase
+  firebase.database().ref("chats/" + chatId + "/background").once("value")
+    .then(snapshot => {
+      const bgImage = snapshot.val();
+      if (bgImage) {
+        chatArea.style.backgroundImage = `url('${bgImage}')`;
+        chatArea.style.backgroundSize = "cover";
+        chatArea.style.backgroundPosition = "center";
+      } else {
+        chatArea.style.backgroundImage = "none";
+      }
+    })
+    .catch(err => console.error("Không đọc được ảnh nền từ Firebase:", err));
+
+  // Lấy màu bong bóng từ Firebase (nếu bạn có trường này)
+  firebase.database().ref("chats/" + chatId + "/bubbleColor").once("value")
+    .then(snapshot => {
+      const bubbleColor = snapshot.val() || "#0084ff";
+      document.documentElement.style.setProperty("--bubble-color", bubbleColor);
+    })
+    .catch(err => {
+      console.warn("Không đọc được màu bong bóng:", err);
+      document.documentElement.style.setProperty("--bubble-color", "#0084ff");
+    });
+}
+
+
     
     /**
      * Khởi tạo các listener và load dữ liệu
@@ -187,39 +206,37 @@ class Chat {
     }
 
     /**
-     * Load thông tin chi tiết của một chat
-     * @param {string} chatId - ID của chat
-     */
-    loadChatDetails(chatId) {
-        // Xóa listener cũ nếu có
-        if (this.chatListeners[`chat_${chatId}`]) {
-            this.chatListeners[`chat_${chatId}`]();
-        }
-        
-        // Thiết lập listener mới
-        const chatRef = dbRefs.chats.child(chatId);
-        this.chatListeners[`chat_${chatId}`] = chatRef.on('value', snapshot => {
-            const chatData = (snapshot && snapshot.val) ? snapshot.val() : null;
-            if (chatData) {
-                this.chats[chatId] = chatData;
-                this.chats[chatId].id = chatId;
-                
-                // Cập nhật thông tin người dùng trong chat
-                this.updateChatUserInfo();
-                
-                // Load tin nhắn của chat này
-                this.loadChatMessages(chatId);
-                
-                // Render lại danh sách chat
-                this.renderChatList();
-                
-                // Cập nhật thông tin chat hiện tại nếu đang xem
-                if (this.currentChatId === chatId) {
-                    this.updateCurrentChatInfo();
-                }
-            }
-        });
+/**
+ * Load thông tin chi tiết của một chat
+ * @param {string} chatId - ID của chat
+ */
+loadChatDetails(chatId) {
+    // Hủy listener cũ nếu có
+    if (this.chatListeners[`chat_${chatId}`]) {
+        this.chatListeners[`chat_${chatId}`]();
     }
+
+    // Thiết lập listener mới
+    const chatRef = dbRefs.chats.child(chatId);
+    this.chatListeners[`chat_${chatId}`] = chatRef.on('value', snapshot => {
+        const chatData = (snapshot && snapshot.val) ? snapshot.val() : null;
+        if (chatData) {
+            this.chats[chatId] = chatData;
+            this.chats[chatId].id = chatId;
+
+            // ✅ Chỉ update user info (trong đó sẽ tự render chat-list khi cần)
+            this.updateChatUserInfo();
+
+            // ✅ Load tin nhắn (KHÔNG render chat-list ở đây nữa)
+            this.loadChatMessages(chatId);
+
+            // ✅ Nếu đang mở chat này thì update info
+            if (this.currentChatId === chatId) {
+                this.updateCurrentChatInfo();
+            }
+        }
+    });
+}
 
     /**
      * Load tin nhắn của một chat
@@ -390,54 +407,45 @@ class Chat {
      * Chọn một chat để xem
      * @param {string} chatId - ID của chat
      */
-    selectChat(chatId) {
-        this.currentChatId = chatId;
-        
-        // Hiển thị container chat
-        document.getElementById('empty-chat').style.display = 'none';
-        document.getElementById('chat-container').style.display = 'flex';
-        
-        // Cập nhật active class trong danh sách chat
-        const chatItems = document.querySelectorAll('.chat-item');
-        chatItems.forEach(item => {
-            item.classList.remove('active');
-        });
-        
-        const selectedChat = document.querySelector(`.chat-item[data-id="${chatId}"]`);
-        if (selectedChat) {
-            selectedChat.classList.add('active');
-        }
-        
-        // Đảm bảo tin nhắn được tải
-        if (!this.messages[chatId]) {
-            this.loadChatMessages(chatId);
-        }
-        
-        // Đặt lại số tin nhắn chưa đọc về 0
-        this.unreadMessages[chatId] = 0;
-        
-        // Cập nhật thông tin chat hiện tại
-        this.updateCurrentChatInfo();
-        
-        // Xử lý giao diện trên thiết bị di động
-        if (window.innerWidth <= 480) {
-            // Thêm class chat-selected vào app-container
-            document.querySelector('.app-container').classList.add('chat-selected');
-            
-            // Hiển thị nút quay lại
-            const backButton = document.getElementById('back-button');
-            if (backButton) {
-                backButton.classList.remove('hidden');
-            }
-        }
-        
-        // Render tin nhắn và cập nhật danh sách chat
-        this.renderMessages();
-        this.renderChatList();
-        
-        // Render thông tin chat
-        this.renderChatInfo();
+selectChat(chatId) {
+    this.currentChatId = chatId;
+    
+    // Hiển thị container chat
+    document.getElementById('empty-chat').style.display = 'none';
+    document.getElementById('chat-container').style.display = 'flex';
+    
+    // Cập nhật active class trong danh sách chat
+    document.querySelectorAll('.chat-item').forEach(item => item.classList.remove('active'));
+    const selectedChat = document.querySelector(`.chat-item[data-id="${chatId}"]`);
+    if (selectedChat) selectedChat.classList.add('active');
+    
+    // Đảm bảo tin nhắn được tải
+    if (!this.messages[chatId]) this.loadChatMessages(chatId);
+    
+    // Đặt lại số tin nhắn chưa đọc về 0
+    this.unreadMessages[chatId] = 0;
+    
+    // Cập nhật thông tin chat hiện tại
+    this.updateCurrentChatInfo();
+
+    // 🔑 Áp dụng ảnh nền & màu bong bóng cho chat đang chọn
+    this.applyChatBackground();
+    
+    // Xử lý giao diện trên thiết bị di động
+    if (window.innerWidth <= 480) {
+        document.querySelector('.app-container').classList.add('chat-selected');
+        const backButton = document.getElementById('back-button');
+        if (backButton) backButton.classList.remove('hidden');
     }
+    
+    // Render tin nhắn và cập nhật danh sách chat
+    this.renderMessages();
+    this.renderChatList();
+    
+    // Render thông tin chat
+    this.renderChatInfo();
+}
+
 
     /**
      * Cập nhật thông tin chat hiện tại trên giao diện
