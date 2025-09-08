@@ -42,7 +42,7 @@ initializeEmojiPicker() {
         const chatHeader = document.querySelector('.chat-header .chat-info');
         const menuToggle = document.createElement('button');
         menuToggle.className = 'menu-toggle';
-        menuToggle.innerHTML = '<i class="fas fa-bars"></i>';
+       
         
         // Thêm sự kiện click
         menuToggle.addEventListener('click', () => {
