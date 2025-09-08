@@ -574,13 +574,23 @@ document.addEventListener("click", (e) => {
 
       const predefinedBackgrounds = [
         {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757305746_lazi_900355.png&w=380&h=280",
+          theme: {
+            "--incoming-bubble-color": "#f4f3ef",
+            "--outgoing-bubble-color": "#4467c1",
+            "--header-bg": "#adc8d7",
+            "--header-text": "#000000",
+            "--input-bg": "#adc8d7"
+          }
+        },
+        {
           url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757254813_lazi_363187.png&w=380&h=280",
           theme: {
             "--incoming-bubble-color": "#f3fffc",
-            "--outgoing-bubble-color": "#c6a26e",
-            "--header-bg": "#fff",
+            "--outgoing-bubble-color": "#02a49a",
+            "--header-bg": "#a1dddf",
             "--header-text": "#000000",
-            "--input-bg": "#fff"
+            "--input-bg": "#a2dee0"
           }
         },
         {
@@ -862,14 +872,6 @@ document.addEventListener("DOMContentLoaded", () => {
   }
 });
 </script>
-
-
-
-
-
-
-
-
 
 
 
@@ -1425,27 +1427,87 @@ if (chat.renderMessage) {
     };
 }
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const messagesContainer = document.getElementById("messages-container");
+
+  function addDataIds() {
+    if (!chat.currentChatId || !chat.messages[chat.currentChatId]) return;
+    const msgs = chat.messages[chat.currentChatId];
+    messagesContainer.querySelectorAll(".message").forEach((div, i) => {
+      if (!div.dataset.id && msgs[i]) div.dataset.id = msgs[i].id;
+    });
+  }
+
+  function addHoverButtons() {
+    addDataIds();
+
+    messagesContainer.querySelectorAll(".message-content").forEach(content => {
+      if (content.querySelector(".message-actions")) return;
+
+      const parentMsg = content.closest(".message");
+      if (!parentMsg) return;
+      const msgId = parentMsg.dataset.id;
+      if (!msgId) return;
+
+      const isOutgoing = parentMsg.classList.contains("outgoing");
+      if (!isOutgoing) return; // chỉ hiện với tin nhắn của bạn
+
+      const actions = document.createElement("div");
+      actions.className = "message-actions";
+      Object.assign(actions.style, {
+        display: "none",
+        position: "absolute",
+        top: "-5px",
+        right: "-5px",
+        background: "rgba(0,0,0,0.75)",
+        padding: "4px 6px",
+        borderRadius: "8px",
+        fontSize: "16px",
+        gap: "10px",
+        alignItems: "center"
+      });
+
+      // ↩ Thu hồi (xóa khỏi Firebase - cả 2 bên)
+      const recallBtn = document.createElement("i");
+      recallBtn.className = "fas fa-undo";
+      recallBtn.style.color = "#4fa3ff";
+      recallBtn.title = "Thu hồi (xóa cả 2 bên)";
+      recallBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        parentMsg.style.opacity = "0";
+        setTimeout(() => {
+          firebase.database()
+            .ref(`messages/${chat.currentChatId}/${msgId}`)
+            .remove();
+        }, 200);
+      });
+      actions.appendChild(recallBtn);
+
+      content.style.position = "relative";
+      content.appendChild(actions);
+      content.addEventListener("mouseenter", () => actions.style.display = "flex");
+      content.addEventListener("mouseleave", () => actions.style.display = "none");
+    });
+  }
+
+  const observer = new MutationObserver(() => addHoverButtons());
+  observer.observe(messagesContainer, { childList: true, subtree: true });
+
+  addHoverButtons();
+});
+</script>
+
+
+
+
+
+
 
 
 
 </body>
-
 </html>
-
-
-
 </body>
-
 </html>
-
-
-
-
-
-
-
-
-
-
-
 
