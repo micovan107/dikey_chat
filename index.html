@@ -574,6 +574,16 @@ document.addEventListener("click", (e) => {
 
       const predefinedBackgrounds = [
         {
+          url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757341578_lazi_310126.png&w=380&h=280",
+          theme: {
+             "--incoming-bubble-color": "#f1f1f1",
+            "--outgoing-bubble-color": "#0084ff",
+            "--header-bg": "#ffffff",
+            "--header-text": "#000000",
+            "--input-bg": "#f1f1f1"
+          }
+        },
+        {
           url: "https://cdn.lazi.vn/timthumb.php?src=storage/uploads/photo/1757305746_lazi_900355.png&w=380&h=280",
           theme: {
             "--incoming-bubble-color": "#f4f3ef",
@@ -1497,78 +1507,11 @@ document.addEventListener("DOMContentLoaded", () => {
   addHoverButtons();
 });
 </script>
-<script>
-document.addEventListener("DOMContentLoaded", () => {
-  const messagesContainer = document.getElementById("messages-container");
 
-  function isPureTextBubble(el) {
-    return Array.from(el.childNodes).every(node => node.nodeType === Node.TEXT_NODE);
-  }
 
-  function enhanceYouTubeLinks(el) {
-    el.querySelectorAll("a").forEach(link => {
-      const href = link.href;
-      const youtubeRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w\-]{11})/;
-      const match = href.match(youtubeRegex);
-      if (match) {
-        const videoId = match[1];
-        if (!el.querySelector(`iframe[data-video-id="${videoId}"]`)) {
-          const prevScrollBottom = 
-            messagesContainer.scrollHeight - messagesContainer.scrollTop;
 
-          const iframe = document.createElement("iframe");
-          iframe.src = `https://www.youtube.com/embed/${videoId}`;
-          iframe.width = "100%";
-          iframe.height = "250";
-          iframe.setAttribute("data-video-id", videoId);
-          iframe.allow =
-            "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
-          iframe.allowFullscreen = true;
-          iframe.style.display = "block";
-          iframe.style.borderRadius = "12px";
-          iframe.style.marginTop = "8px";
-          el.appendChild(iframe);
 
-          
-          messagesContainer.scrollTop =
-            messagesContainer.scrollHeight - prevScrollBottom;
-        }
-      }
-    });
-  }
 
-  function linkifyElement(el) {
-    const text = el.textContent.trim();
-    const urlRegex = /(https?:\/\/[^\s]+)/g;
-    if (urlRegex.test(text)) {
-      el.innerHTML = text.replace(
-        urlRegex,
-        '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>'
-      );
-    }
-    enhanceYouTubeLinks(el);
-    el.dataset.linkified = "true";
-  }
-
-  function linkifyAllMessages() {
-    messagesContainer.querySelectorAll(".message-bubble").forEach(el => {
-      if (!el.dataset.linkified && isPureTextBubble(el)) {
-        linkifyElement(el);
-      } else if (!el.querySelector("iframe")) {
-        enhanceYouTubeLinks(el);
-      }
-      el.dataset.linkified = "true";
-    });
-  }
-
-  linkifyAllMessages();
-
-  const observer = new MutationObserver(() => {
-    linkifyAllMessages();
-  });
-  observer.observe(messagesContainer, { childList: true, subtree: true, characterData: true });
-});
-</script>
 
 
 
@@ -1583,5 +1526,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </html>
 </body>
 </html>
-
 
