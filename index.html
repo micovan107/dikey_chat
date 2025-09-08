@@ -1468,7 +1468,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alignItems: "center"
       });
 
-      // ↩ Thu hồi (xóa khỏi Firebase - cả 2 bên)
+      
       const recallBtn = document.createElement("i");
       recallBtn.className = "fas fa-undo";
       recallBtn.style.color = "#4fa3ff";
@@ -1541,7 +1541,7 @@ document.addEventListener("DOMContentLoaded", () => {
         '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>'
       );
     }
-    enhanceYouTubeLinks(el); // ✅ xử lý luôn sau khi linkify
+    enhanceYouTubeLinks(el);
     el.dataset.linkified = "true";
   }
 
@@ -1565,6 +1565,7 @@ document.addEventListener("DOMContentLoaded", () => {
   observer.observe(messagesContainer, { childList: true, subtree: true, characterData: true });
 });
 </script>
+
 
 
 
