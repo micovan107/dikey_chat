@@ -10,7 +10,7 @@
 </head>
 <body>
     <div class="app-container">
-        
+        <!-- Màn hình đăng nhập -->
         <div id="login-screen" class="screen active">
             <div class="login-container">
                 <div class="logo">
@@ -24,7 +24,7 @@
             </div>
         </div>
 
-        
+        <!-- Màn hình chính -->
         <div id="main-screen" class="screen">
             <!-- Sidebar -->
             <div class="sidebar">
@@ -76,7 +76,7 @@
 
            
 
-            
+            <!-- Khu vực chat chính -->
             <div class="chat-area">
                 <div class="empty-chat-placeholder" id="empty-chat">
                     <img src="images/chat-placeholder.svg" alt="Chọn một cuộc trò chuyện">
@@ -100,7 +100,7 @@
                     </div>
                     
                     <div class="messages-container" id="messages-container">
-                        
+                        <!-- Tin nhắn sẽ được thêm vào đây bằng JavaScript -->
                     </div>
                     
                     <div class="message-input-container">
@@ -121,7 +121,7 @@
                 </div>
             </div>
             
-            
+            <!-- Sidebar thông tin (ẩn mặc định) -->
             <div class="info-sidebar" id="info-sidebar">
                 <div class="info-header">
                     <h3>Thông tin</h3>
@@ -130,12 +130,12 @@
                     </button>
                 </div>
                 <div class="info-content" id="info-content">
-                    
+                    <!-- Thông tin sẽ được thêm vào đây bằng JavaScript -->
                 </div>
             </div>
         </div>
         
-       
+        <!-- Modal tạo nhóm -->
         <div id="create-group-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -186,7 +186,7 @@
 window.emailNotification = {
     sendNotification: function () {
         // Bỏ qua không làm gì cả
-        console.log(" Đã chặn gửi email notification.");
+        console.log("📭 Đã chặn gửi email notification.");
     }
 };
 </script>
@@ -258,7 +258,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  
+  // Gắn sự kiện cho nút menu
   if (menuToggle) {
     menuToggle.addEventListener('click', () => {
       // Thoát chế độ chat
@@ -1497,18 +1497,75 @@ document.addEventListener("DOMContentLoaded", () => {
   addHoverButtons();
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const messagesContainer = document.getElementById("messages-container");
+
+  function isPureTextBubble(el) {
+    return Array.from(el.childNodes).every(node => node.nodeType === Node.TEXT_NODE);
+  }
+
+  function enhanceYouTubeLinks(el) {
+    // Tìm tất cả thẻ a trong bubble
+    el.querySelectorAll("a").forEach(link => {
+      const href = link.href;
+      const youtubeRegex = /(?:youtube\.com\/watch\?v=|youtu\.be\/)([\w\-]{11})/;
+      const match = href.match(youtubeRegex);
+      if (match) {
+        const videoId = match[1];
+        // Tránh nhúng trùng nếu đã có iframe
+        if (!el.querySelector(`iframe[data-video-id="${videoId}"]`)) {
+          const iframe = document.createElement("iframe");
+          iframe.src = `https://www.youtube.com/embed/${videoId}`;
+          iframe.width = "100%";
+          iframe.height = "250";
+          iframe.setAttribute("data-video-id", videoId);
+          iframe.allow =
+            "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture";
+          iframe.allowFullscreen = true;
+          iframe.style.display = "block";
+          iframe.style.borderRadius = "12px";
+          iframe.style.marginTop = "8px";
+          el.appendChild(iframe);
+        }
+      }
+    });
+  }
+
+  function linkifyElement(el) {
+    const text = el.textContent.trim();
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    if (urlRegex.test(text)) {
+      el.innerHTML = text.replace(
+        urlRegex,
+        '<a href="$1" target="_blank" rel="noopener noreferrer" class="chat-link">$1</a>'
+      );
+    }
+    enhanceYouTubeLinks(el); // ✅ xử lý luôn sau khi linkify
+    el.dataset.linkified = "true";
+  }
+
+  function linkifyAllMessages() {
+    messagesContainer.querySelectorAll(".message-bubble").forEach(el => {
+      if (!el.dataset.linkified && isPureTextBubble(el)) {
+        linkifyElement(el);
+      } else if (!el.querySelector("iframe")) {
+        // Nếu đã linkify rồi nhưng chưa nhúng video
+        enhanceYouTubeLinks(el);
+      }
+      el.dataset.linkified = "true";
+    });
+  }
+
+  linkifyAllMessages();
+
+  const observer = new MutationObserver(() => {
+    linkifyAllMessages();
+  });
+  observer.observe(messagesContainer, { childList: true, subtree: true, characterData: true });
+});
+</script>
 
 
-
-
-
-
-
-
-
-</body>
-</html>
-</body>
-</html>
 
 
