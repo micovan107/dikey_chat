@@ -186,7 +186,7 @@
 window.emailNotification = {
     sendNotification: function () {
         // Bỏ qua không làm gì cả
-        console.log("📭 Đã chặn gửi email notification.");
+        console.log(" Đã chặn gửi email notification.");
     }
 };
 </script>
@@ -285,13 +285,13 @@ document.addEventListener("DOMContentLoaded", () => {
   firebase.auth().onAuthStateChanged(async (user) => {
     if (!user) return;
 
-    console.log("👤 User đã login:", user.uid);
+    console.log(" User đã login:", user.uid);
 
     const groupRef = firebase.database().ref("chats/" + defaultGroupId);
     const snapshot = await groupRef.once("value");
 
     if (!snapshot.exists()) {
-      console.log("➡️ Tạo group mặc định");
+      console.log(" Tạo group mặc định");
       await groupRef.set({
         id: defaultGroupId,
         name: defaultGroupName,
@@ -302,7 +302,7 @@ document.addEventListener("DOMContentLoaded", () => {
         lastActivity: firebase.database.ServerValue.TIMESTAMP
       });
     } else {
-      console.log("✅ Group đã tồn tại, thêm user vào members");
+      console.log(" Group đã tồn tại, thêm user vào members");
       await groupRef.child("members/" + user.uid).set(true);
     }
 
@@ -316,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render lại danh sách chat ngay
     if (window.chat && typeof window.chat.renderChatList === "function") {
-      console.log("🔄 Gọi renderChatList()");
+      console.log(" Gọi renderChatList()");
       window.chat.renderChatList();
     }
   });
@@ -1531,4 +1531,5 @@ document.addEventListener("DOMContentLoaded", () => {
 </html>
 </body>
 </html>
+
 
