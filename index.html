@@ -281,43 +281,48 @@ document.addEventListener("DOMContentLoaded", () => {
   const defaultGroupId = "congdongviet";
   const defaultGroupName = "Cộng đồng Việt";
 
-  const checkInterval = setInterval(() => {
-    if (typeof firebase !== "undefined" && typeof authManager !== "undefined") {
-      clearInterval(checkInterval);
+  // Lắng nghe sự kiện login thành công
+  firebase.auth().onAuthStateChanged(async (user) => {
+    if (!user) return;
 
-      const currentUser = authManager.getCurrentUser();
-      if (!currentUser) return;
+    console.log("👤 User đã login:", user.uid);
 
-      const groupRef = firebase.database().ref("chats/" + defaultGroupId);
+    const groupRef = firebase.database().ref("chats/" + defaultGroupId);
+    const snapshot = await groupRef.once("value");
 
-      groupRef.once("value").then((snapshot) => {
-        if (!snapshot.exists()) {
-          //  KHÔNG lưu photoURL mặc định vào DB
-          groupRef.set({
-            id: defaultGroupId,
-            name: defaultGroupName,
-            type: "group",
-            createdAt: firebase.database.ServerValue.TIMESTAMP,
-            createdBy: "system",
-            members: { [currentUser.uid]: true },
-            lastActivity: firebase.database.ServerValue.TIMESTAMP
-          });
-        } else {
-          groupRef.child("members/" + currentUser.uid).set(true);
-        }
-
-        // Thêm nhóm này vào danh sách chat của user
-        firebase.database()
-          .ref("user_chats/" + currentUser.uid + "/" + defaultGroupId)
-          .set({
-            chatId: defaultGroupId,
-            joinedAt: firebase.database.ServerValue.TIMESTAMP
-          });
+    if (!snapshot.exists()) {
+      console.log("➡️ Tạo group mặc định");
+      await groupRef.set({
+        id: defaultGroupId,
+        name: defaultGroupName,
+        type: "group",
+        createdAt: firebase.database.ServerValue.TIMESTAMP,
+        createdBy: "system",
+        members: { [user.uid]: true },
+        lastActivity: firebase.database.ServerValue.TIMESTAMP
       });
+    } else {
+      console.log("✅ Group đã tồn tại, thêm user vào members");
+      await groupRef.child("members/" + user.uid).set(true);
     }
-  }, 500);
+
+    // Thêm vào danh sách user_chats
+    await firebase.database()
+      .ref("user_chats/" + user.uid + "/" + defaultGroupId)
+      .set({
+        chatId: defaultGroupId,
+        joinedAt: firebase.database.ServerValue.TIMESTAMP
+      });
+
+    // Render lại danh sách chat ngay
+    if (window.chat && typeof window.chat.renderChatList === "function") {
+      console.log("🔄 Gọi renderChatList()");
+      window.chat.renderChatList();
+    }
+  });
 });
 </script>
+
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const DEFAULT_AVATAR = "data:image/png;base64,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";
