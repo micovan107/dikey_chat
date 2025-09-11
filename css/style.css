@@ -1782,10 +1782,20 @@ input:checked + .slider:before {
     border-radius: 10px;
   }
 
-  /* Video YouTube nhỏ hơn */
-  .message-content iframe {
-    height: 180px !important;
-    border-radius: 10px;
-  }
+  
+}
+/* Khung video YouTube mặc định */
+.youtube-video iframe {
+  width: 300px;
+  height: 180px;
+  border-radius: 10px;
+  max-width: 100%;
 }
 
+/* Responsive cho màn hình nhỏ */
+@media (max-width: 480px) {
+  .youtube-video iframe {
+    width: 100%;
+    height: 160px !important; /* hoặc 150px nếu muốn nhỏ hơn nữa */
+  }
+}
