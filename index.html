@@ -316,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render lại danh sách chat ngay
     if (window.chat && typeof window.chat.renderChatList === "function") {
-      console.log(" Gọi renderChatList()");
+      console.log("🔄 Gọi renderChatList()");
       window.chat.renderChatList();
     }
   });
@@ -1483,7 +1483,7 @@ document.addEventListener("DOMContentLoaded", () => {
         alignItems: "center"
       });
 
-      // ↩ Thu hồi (xóa khỏi Firebase - cả 2 bên)
+      
       const recallBtn = document.createElement("i");
       recallBtn.className = "fas fa-undo";
       recallBtn.style.color = "#4fa3ff";
@@ -1512,18 +1512,78 @@ document.addEventListener("DOMContentLoaded", () => {
   addHoverButtons();
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const messagesContainer = document.getElementById("messages-container");
 
+  function embedYouTube(el) {
+    if (el.dataset.youtubeProcessed) return; // chỉ xử lý 1 lần
 
+    const text = el.textContent.trim();
+    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&]+)/;
+    const match = text.match(youtubeRegex);
 
+    if (match) {
+      const videoId = match[1];
 
+      // Lưu trạng thái scroll trước khi render
+      const isAtBottom =
+        Math.abs(
+          messagesContainer.scrollHeight -
+            messagesContainer.scrollTop -
+            messagesContainer.clientHeight
+        ) < 50;
+      const prevScrollTop = messagesContainer.scrollTop;
+      const prevScrollHeight = messagesContainer.scrollHeight;
 
+      // Render video
+      el.innerHTML = `
+        <div class="youtube-video">
+          <iframe width="300" height="180"
+                  src="https://www.youtube.com/embed/${videoId}"
+                  frameborder="0" allow="accelerometer; autoplay;
+                  clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen></iframe>
+        </div>
+      `;
+      el.dataset.youtubeProcessed = "true";
 
+      // Khôi phục scroll
+      if (isAtBottom) {
+        messagesContainer.scrollTop = messagesContainer.scrollHeight;
+      } else {
+        const newScrollHeight = messagesContainer.scrollHeight;
+        messagesContainer.scrollTop =
+          prevScrollTop + (newScrollHeight - prevScrollHeight);
+      }
+    }
+  }
 
+  // Xử lý tin nhắn có sẵn khi load
+  function processExistingMessages() {
+    messagesContainer.querySelectorAll(".message-bubble").forEach(el => embedYouTube(el));
+  }
 
+  // Theo dõi tin nhắn mới
+  const observer = new MutationObserver(mutations => {
+    mutations.forEach(mutation => {
+      mutation.addedNodes.forEach(node => {
+        if (node.nodeType === 1) {
+          const bubble = node.classList.contains("message-bubble")
+            ? node
+            : node.querySelector(".message-bubble");
+          if (bubble && !bubble.dataset.youtubeProcessed && !bubble.querySelector("iframe")) {
+            embedYouTube(bubble);
+          }
+        }
+      });
+    });
+  });
 
-
-
-
+  observer.observe(messagesContainer, { childList: true, subtree: true });
+  processExistingMessages();
+});
+</script>
 
 
 
@@ -1531,5 +1591,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </html>
 </body>
 </html>
-
 
