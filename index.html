@@ -281,48 +281,43 @@ document.addEventListener("DOMContentLoaded", () => {
   const defaultGroupId = "congdongviet";
   const defaultGroupName = "Cộng đồng Việt";
 
-  // Lắng nghe sự kiện login thành công
-  firebase.auth().onAuthStateChanged(async (user) => {
-    if (!user) return;
+  const checkInterval = setInterval(() => {
+    if (typeof firebase !== "undefined" && typeof authManager !== "undefined") {
+      clearInterval(checkInterval);
 
-    console.log(" User đã login:", user.uid);
+      const currentUser = authManager.getCurrentUser();
+      if (!currentUser) return;
 
-    const groupRef = firebase.database().ref("chats/" + defaultGroupId);
-    const snapshot = await groupRef.once("value");
+      const groupRef = firebase.database().ref("chats/" + defaultGroupId);
 
-    if (!snapshot.exists()) {
-      console.log(" Tạo group mặc định");
-      await groupRef.set({
-        id: defaultGroupId,
-        name: defaultGroupName,
-        type: "group",
-        createdAt: firebase.database.ServerValue.TIMESTAMP,
-        createdBy: "system",
-        members: { [user.uid]: true },
-        lastActivity: firebase.database.ServerValue.TIMESTAMP
+      groupRef.once("value").then((snapshot) => {
+        if (!snapshot.exists()) {
+          //  KHÔNG lưu photoURL mặc định vào DB
+          groupRef.set({
+            id: defaultGroupId,
+            name: defaultGroupName,
+            type: "group",
+            createdAt: firebase.database.ServerValue.TIMESTAMP,
+            createdBy: "system",
+            members: { [currentUser.uid]: true },
+            lastActivity: firebase.database.ServerValue.TIMESTAMP
+          });
+        } else {
+          groupRef.child("members/" + currentUser.uid).set(true);
+        }
+
+        // Thêm nhóm này vào danh sách chat của user
+        firebase.database()
+          .ref("user_chats/" + currentUser.uid + "/" + defaultGroupId)
+          .set({
+            chatId: defaultGroupId,
+            joinedAt: firebase.database.ServerValue.TIMESTAMP
+          });
       });
-    } else {
-      console.log(" Group đã tồn tại, thêm user vào members");
-      await groupRef.child("members/" + user.uid).set(true);
     }
-
-    // Thêm vào danh sách user_chats
-    await firebase.database()
-      .ref("user_chats/" + user.uid + "/" + defaultGroupId)
-      .set({
-        chatId: defaultGroupId,
-        joinedAt: firebase.database.ServerValue.TIMESTAMP
-      });
-
-    // Render lại danh sách chat ngay
-    if (window.chat && typeof window.chat.renderChatList === "function") {
-      console.log("🔄 Gọi renderChatList()");
-      window.chat.renderChatList();
-    }
-  });
+  }, 500);
 });
 </script>
-
 <script>
 document.addEventListener("DOMContentLoaded", () => {
   const DEFAULT_AVATAR = "data:image/png;base64,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";
@@ -1514,82 +1509,365 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
+  const emojiContainer = document.getElementById("emoji-container");
+
+ 
+  const toggleBtn = document.createElement("button");
+  toggleBtn.id = "toggleGifBtn";
+  toggleBtn.textContent = "Gif";
+  toggleBtn.style.margin = "5px";
+  toggleBtn.style.padding = "4px 8px";
+  emojiContainer.parentNode.insertBefore(toggleBtn, emojiContainer);
+
+  
+  const gifList = [
+  "https://chat.lazi.vn/emoji/gif_lively/226.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/225.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/224.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/223.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/222.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/221.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/220.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/219.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/218.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/217.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/216.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/215.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/214.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/213.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/212.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/211.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/210.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/209.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/208.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/207.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/206.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/205.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/204.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/203.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/202.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/201.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/200.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/199.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/198.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/197.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/196.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/195.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/194.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/193.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/192.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/191.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/190.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/189.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/188.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/187.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/186.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/185.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/184.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/183.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/182.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/181.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/180.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/179.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/178.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/177.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/176.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/175.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/174.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/173.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/172.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/171.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/170.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/169.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/168.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/167.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/166.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/165.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/164.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/163.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/162.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/161.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/160.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/159.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/158.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/157.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/156.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/155.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/154.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/153.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/152.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/151.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/150.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/149.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/148.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/147.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/146.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/145.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/144.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/143.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/142.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/141.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/140.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/139.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/138.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/137.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/136.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/135.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/134.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/133.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/132.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/131.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/130.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/129.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/128.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/127.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/126.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/125.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/124.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/123.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/122.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/121.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/120.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/119.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/118.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/117.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/116.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/115.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/114.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/113.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/112.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/111.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/110.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/109.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/108.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/107.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/106.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/105.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/104.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/103.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/102.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/101.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/100.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/99.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/98.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/97.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/96.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/95.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/94.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/93.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/92.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/91.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/90.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/89.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/88.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/87.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/86.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/85.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/84.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/83.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/82.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/81.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/80.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/79.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/78.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/77.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/76.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/75.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/74.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/73.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/72.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/71.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/70.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/69.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/68.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/67.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/66.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/65.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/64.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/63.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/62.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/61.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/60.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/59.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/58.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/57.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/56.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/55.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/54.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/53.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/52.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/51.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/50.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/49.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/48.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/47.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/46.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/45.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/44.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/43.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/42.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/41.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/40.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/39.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/38.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/37.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/36.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/35.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/34.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/33.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/32.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/31.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/30.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/29.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/28.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/27.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/26.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/25.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/24.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/23.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/22.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/21.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/20.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/19.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/18.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/17.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/16.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/15.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/14.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/13.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/12.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/11.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/10.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/9.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/8.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/7.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/6.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/5.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/4.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/3.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/2.gif",
+  "https://chat.lazi.vn/emoji/gif_lively/1.gif",
+  ];
+
+
+  const originalEmojis = emojiContainer.innerHTML;
+  let showingGif = false;
+
+  function renderGifs() {
+    emojiContainer.innerHTML = "";
+    gifList.forEach(url => {
+      const img = document.createElement("img");
+      img.src = url;
+      img.className = "emoji-item";
+      img.style.width = "40px";
+      img.style.height = "40px";
+      img.style.cursor = "pointer";
+      img.style.margin = "3px";
+      // Khi click vào GIF, chèn link vào input
+      img.addEventListener("click", () => {
+        const input = document.getElementById("message-text");
+        if (input) {
+          
+          input.value += (input.value ? " " : "") + url + " ";
+        }
+      });
+      emojiContainer.appendChild(img);
+    });
+  }
+
+  
+  toggleBtn.addEventListener("click", () => {
+    showingGif = !showingGif;
+    if (showingGif) {
+      toggleBtn.textContent = "Emoji";
+      renderGifs();
+    } else {
+      toggleBtn.textContent = "Gif";
+      emojiContainer.innerHTML = originalEmojis;
+    }
+  });
+
+  // 🔹 Click emoji text ban đầu để chèn vào input chat
+  emojiContainer.addEventListener("click", e => {
+    if (e.target.classList.contains("emoji-item") && e.target.tagName === "SPAN") {
+      const input = document.getElementById("message-text");
+      if (input) {
+        input.value += e.target.textContent;
+      }
+    }
+  });
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
   const messagesContainer = document.getElementById("messages-container");
 
-  function embedYouTube(el) {
-    if (el.dataset.youtubeProcessed) return; // chỉ xử lý 1 lần
-
-    const text = el.textContent.trim();
-    const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&]+)/;
-    const match = text.match(youtubeRegex);
-
-    if (match) {
-      const videoId = match[1];
-
-      // Lưu trạng thái scroll trước khi render
-      const isAtBottom =
-        Math.abs(
-          messagesContainer.scrollHeight -
-            messagesContainer.scrollTop -
-            messagesContainer.clientHeight
-        ) < 50;
-      const prevScrollTop = messagesContainer.scrollTop;
-      const prevScrollHeight = messagesContainer.scrollHeight;
-
-      // Render video
-      el.innerHTML = `
-        <div class="youtube-video">
-          <iframe width="300" height="180"
-                  src="https://www.youtube.com/embed/${videoId}"
-                  frameborder="0" allow="accelerometer; autoplay;
-                  clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowfullscreen></iframe>
-        </div>
-      `;
-      el.dataset.youtubeProcessed = "true";
-
-      // Khôi phục scroll
-      if (isAtBottom) {
-        messagesContainer.scrollTop = messagesContainer.scrollHeight;
-      } else {
-        const newScrollHeight = messagesContainer.scrollHeight;
-        messagesContainer.scrollTop =
-          prevScrollTop + (newScrollHeight - prevScrollHeight);
-      }
+  // chỉ scroll xuống nếu user đang ở cuối
+  function scrollIfNearBottom() {
+    const bottomSpace =
+      messagesContainer.scrollHeight -
+      (messagesContainer.scrollTop + messagesContainer.clientHeight);
+    if (bottomSpace < 100) {
+      messagesContainer.scrollTop = messagesContainer.scrollHeight;
     }
   }
 
-  // Xử lý tin nhắn có sẵn khi load
-  function processExistingMessages() {
-    messagesContainer.querySelectorAll(".message-bubble").forEach(el => embedYouTube(el));
+  function replaceGifLinks(el) {
+    // đã xử lý rồi thì bỏ qua
+    if (el.dataset.gifProcessed === "true") return;
+
+    el.querySelectorAll("a").forEach(link => {
+      const href = link.href;
+      if (/\.gif(\?|$)/i.test(href)) {
+        // tạo ảnh GIF
+        const img = document.createElement("img");
+        img.src = href;
+        img.style.maxWidth = "150px";
+        img.style.borderRadius = "8px";
+        img.style.display = "block";
+        img.style.marginTop = "6px";
+
+        // thay link bằng ảnh
+        link.replaceWith(img);
+        el.dataset.gifProcessed = "true";
+      }
+    });
   }
 
-  // Theo dõi tin nhắn mới
-  const observer = new MutationObserver(mutations => {
-    mutations.forEach(mutation => {
-      mutation.addedNodes.forEach(node => {
-        if (node.nodeType === 1) {
-          const bubble = node.classList.contains("message-bubble")
-            ? node
-            : node.querySelector(".message-bubble");
-          if (bubble && !bubble.dataset.youtubeProcessed && !bubble.querySelector("iframe")) {
-            embedYouTube(bubble);
-          }
-        }
-      });
+  function processAllMessages() {
+    messagesContainer.querySelectorAll(".message-bubble").forEach(el => {
+      replaceGifLinks(el);
     });
-  });
+    scrollIfNearBottom();
+  }
 
+  // chạy 1 lần khi load
+  processAllMessages();
+
+  // quan sát tin nhắn mới
+  const observer = new MutationObserver(() => {
+    processAllMessages();
+  });
   observer.observe(messagesContainer, { childList: true, subtree: true });
-  processExistingMessages();
 });
 </script>
 
 
 
-</body>
-</html>
-</body>
-</html>
 
+
+
+
+
+
+
+
+
+
+
+
+</body>
+</html>
+</body>
+</html>
 
