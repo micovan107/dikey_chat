@@ -186,7 +186,7 @@
 window.emailNotification = {
     sendNotification: function () {
         // Bỏ qua không làm gì cả
-        console.log("📭 Đã chặn gửi email notification.");
+        console.log(" Đã chặn gửi email notification.");
     }
 };
 </script>
@@ -316,7 +316,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     // Render lại danh sách chat ngay
     if (window.chat && typeof window.chat.renderChatList === "function") {
-      console.log(" Gọi renderChatList()");
+      console.log("🔄 Gọi renderChatList()");
       window.chat.renderChatList();
     }
   });
@@ -349,7 +349,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
- 
+  // Lắng nghe tất cả lỗi tải ảnh và ngăn không cho nó báo lên console
   window.addEventListener("error", function (e) {
     if (e.target.tagName === "IMG" && e.target.src.includes("/images/default-avatar.svg")) {
       // Ngăn lỗi hiện trong console
@@ -1195,7 +1195,7 @@ chat.loadChatDetails = function(chatId) {
     chatRef.child("messages").limitToLast(50).on("child_added", snapshot => {
         const message = snapshot.val();
         if (!message) return;
-        this.appendMessage(chatId, message);
+        this.appendMessage(chatId, message); // <-- Bạn cần có hàm appendMessage
         if (chatId === this.currentChatId) this.scrollToBottom();
     });
 };
@@ -1517,7 +1517,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const messagesContainer = document.getElementById("messages-container");
 
   function embedYouTube(el) {
-    if (el.dataset.youtubeProcessed) return; 
+    if (el.dataset.youtubeProcessed) return; // chỉ xử lý 1 lần
 
     const text = el.textContent.trim();
     const youtubeRegex = /(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/)([^\s&]+)/;
@@ -1584,13 +1584,6 @@ document.addEventListener("DOMContentLoaded", () => {
   processExistingMessages();
 });
 </script>
-
-
-
-
-
-
-
 
 
 
