@@ -1546,7 +1546,11 @@ input:checked + .slider:before {
 .typing-dot:nth-child(3) {
     animation-delay: 0.4s;
 }
-
+.message-bubble[data-linkified="true"] {
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: pre-wrap;
+}
 
 @keyframes typingAnimation {
     0% {
