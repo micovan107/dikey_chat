@@ -1414,10 +1414,10 @@ function previewAndSend(chatInstance, chatId, messageInput) {
 }
 
 if (chat && typeof chat.sendMessage === "function") {
-    // Lưu hàm gốc
+   
     chat._originalSendMessage = chat.sendMessage;
 
-    // Ghi đè lại
+
     chat.sendMessage = function(chatId, messageText) {
         const messageInput = document.getElementById("message-text");
         if (!messageInput) return;
@@ -1461,7 +1461,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!msgId) return;
 
       const isOutgoing = parentMsg.classList.contains("outgoing");
-      if (!isOutgoing) return; // chỉ hiện với tin nhắn của bạn
+      if (!isOutgoing) return; 
 
       const actions = document.createElement("div");
       actions.className = "message-actions";
@@ -1507,6 +1507,57 @@ document.addEventListener("DOMContentLoaded", () => {
   addHoverButtons();
 });
 </script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const userProfile = document.querySelector(".sidebar-header .user-profile");
+  const sidebarActions = document.querySelector(".sidebar-actions");
+  if (!userProfile || !sidebarActions) return;
+
+ 
+  userProfile.classList.add("hidden");
+
+
+  const toggleBtn = document.createElement("button");
+  toggleBtn.id = "toggle-user-profile";
+  toggleBtn.title = "Ẩn/Hiện thông tin tài khoản";
+  toggleBtn.innerHTML = '<i class="fas fa-user"></i>';
+
+  toggleBtn.style.marginRight = "10px";
+
+
+  sidebarActions.insertBefore(toggleBtn, sidebarActions.firstChild);
+
+  // Xử lý click
+  toggleBtn.addEventListener("click", () => {
+    userProfile.classList.toggle("hidden");
+
+    if (userProfile.classList.contains("hidden")) {
+      toggleBtn.style.color = "#999"; 
+    } else {
+      toggleBtn.style.color = "var(--primary-color)"; 
+    }
+  });
+
+
+  const style = document.createElement("style");
+  style.textContent = `
+    .user-profile.hidden {
+      display: none !important;
+    }
+  `;
+  document.head.appendChild(style);
+});
+</script>
+<script>
+document.addEventListener("DOMContentLoaded", () => {
+  const userProfile = document.querySelector(".user-profile");
+  if (userProfile) {
+    userProfile.addEventListener("click", () => {
+      window.location.href = "https://micovan107.github.io/rapphim.vn/profile.html";
+    });
+  }
+});
+</script>
 
 
 
@@ -1525,6 +1576,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </html>
 </body>
 </html>
+
 
 
 
