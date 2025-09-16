@@ -21,7 +21,7 @@ const database = firebase.database();
 // Cloudinary Configuration
 const cloudinaryConfig = {
     cloudName: 'dw8rpacnn',
-    uploadPreset: 'dikeychat'
+    uploadPreset: 'nguyentiennam'
 };
 
 // Initialize Cloudinary
