@@ -1566,7 +1566,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const messagesContainer = document.getElementById("messages-container");
   let isReloading = false;
 
-  // biến toàn cục trong chat để load thêm tin
+
   window.chatMessageLimit = MAX_MESSAGES;
 
   function trimMessages() {
@@ -1582,7 +1582,7 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // Hook vào appendMessage để trim ngay sau khi thêm
+ 
   if (window.chat && typeof window.chat.appendMessage === "function") {
     const oldAppend = window.chat.appendMessage;
     window.chat.appendMessage = function (chatId, message, prepend = false) {
@@ -1595,17 +1595,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const observer = new MutationObserver(() => trimMessages());
   observer.observe(messagesContainer, { childList: true });
 
-  // Khi scroll lên đầu → tăng MAX_MESSAGES + reload chat với limit mới
+ 
   messagesContainer.addEventListener("scroll", () => {
     if (messagesContainer.scrollTop === 0 && !isReloading) {
       isReloading = true;
-      console.log("Đang ở đỉnh → chuẩn bị reload chat…");
+      console.log("Việc sử dụng console sẽ khiến bạn hối hận :>");
 
-      // tăng số tin muốn lấy
       MAX_MESSAGES += STEP;
       window.chatMessageLimit = MAX_MESSAGES; 
 
-      // tìm chat-item active để click lại
+
       const activeChatItem = document.querySelector(".chat-item.active");
       if (activeChatItem) {
         console.log("Click lại chat:", activeChatItem.dataset.id);
@@ -1622,7 +1621,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
      
       setTimeout(() => {
-        messagesContainer.scrollTop = 50; 
+        messagesContainer.scrollTop = 1700; 
         isReloading = false;
         console.log("Nhìn gì mà nhìn");
       }, 1000); 
@@ -1646,6 +1645,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </html>
 </body>
 </html>
+
 
 
 
