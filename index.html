@@ -24,9 +24,9 @@
             </div>
         </div>
 
-        <!-- Màn hình chính -->
+ 
         <div id="main-screen" class="screen">
-            <!-- Sidebar -->
+    
             <div class="sidebar">
                 <div class="sidebar-header">
                     <div class="user-profile">
@@ -63,12 +63,12 @@
                 <div class="tab-content">
                     <div id="chats-tab" class="tab-pane active">
                         <div class="chat-list" id="chat-list">
-                            <!-- Danh sách chat sẽ được thêm vào đây bằng JavaScript -->
+
                         </div>
                     </div>
                     <div id="users-tab" class="tab-pane">
                         <div class="user-list" id="user-list">
-                            <!-- Danh sách người dùng sẽ được thêm vào đây bằng JavaScript -->
+
                         </div>
                     </div>
                 </div>
@@ -100,7 +100,7 @@
                     </div>
                     
                     <div class="messages-container" id="messages-container">
-                        <!-- Tin nhắn sẽ được thêm vào đây bằng JavaScript -->
+              
                     </div>
                     
                     <div class="message-input-container">
@@ -121,7 +121,7 @@
                 </div>
             </div>
             
-            <!-- Sidebar thông tin (ẩn mặc định) -->
+
             <div class="info-sidebar" id="info-sidebar">
                 <div class="info-header">
                     <h3>Thông tin</h3>
@@ -130,12 +130,12 @@
                     </button>
                 </div>
                 <div class="info-content" id="info-content">
-                    <!-- Thông tin sẽ được thêm vào đây bằng JavaScript -->
+  
                 </div>
             </div>
         </div>
         
-        <!-- Modal tạo nhóm -->
+
         <div id="create-group-modal" class="modal">
             <div class="modal-content">
                 <div class="modal-header">
@@ -164,7 +164,7 @@
                     <div class="form-group">
                         <label>Chọn thành viên:</label>
                         <div class="user-selection" id="user-selection">
-                            <!-- Danh sách người dùng sẽ được thêm vào đây bằng JavaScript -->
+                          
                         </div>
                     </div>
                 </div>
@@ -177,7 +177,7 @@
         <!-- Emoji picker -->
         <div id="emoji-picker" class="emoji-picker">
             <div class="emoji-container" id="emoji-container">
-                <!-- Emoji sẽ được thêm vào đây bằng JavaScript -->
+          
             </div>
         </div>
     </div>
@@ -195,7 +195,6 @@ window.emailNotification = {
     <!-- Thông báo toast -->
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- Scripts -->
    
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
@@ -261,16 +260,16 @@ document.addEventListener('DOMContentLoaded', () => {
   // Gắn sự kiện cho nút menu
   if (menuToggle) {
     menuToggle.addEventListener('click', () => {
-      // Thoát chế độ chat
+    
       appContainer.classList.remove('chat-selected');
 
-      // Hiện sidebar
+  
       sidebar.classList.add('active');
 
-      // Ẩn chat area
+  
       chatContainer.style.display = 'none';
 
-      // Hiện placeholder
+
       emptyChat.style.display = 'flex';
     });
   }
@@ -292,7 +291,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
       groupRef.once("value").then((snapshot) => {
         if (!snapshot.exists()) {
-          //  KHÔNG lưu photoURL mặc định vào DB
+   
           groupRef.set({
             id: defaultGroupId,
             name: defaultGroupName,
@@ -306,7 +305,7 @@ document.addEventListener("DOMContentLoaded", () => {
           groupRef.child("members/" + currentUser.uid).set(true);
         }
 
-        // Thêm nhóm này vào danh sách chat của user
+
         firebase.database()
           .ref("user_chats/" + currentUser.uid + "/" + defaultGroupId)
           .set({
@@ -344,7 +343,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 <script>
 document.addEventListener("DOMContentLoaded", () => {
-  // Lắng nghe tất cả lỗi tải ảnh và ngăn không cho nó báo lên console
+
   window.addEventListener("error", function (e) {
     if (e.target.tagName === "IMG" && e.target.src.includes("/images/default-avatar.svg")) {
       // Ngăn lỗi hiện trong console
@@ -356,7 +355,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 
-<!-- Âm thanh thông báo -->
+
 <audio id="new-message-sound" 
        src="https://notificationsounds.com/storage/sounds/file-sounds-1150-pristine.mp3" 
        preload="auto"></audio>
@@ -368,7 +367,7 @@ document.addEventListener("DOMContentLoaded", () => {
   let userInteracted = false;
   let lastUnreadCounts = {};
 
-  // Unlock audio khi user click hoặc gõ lần đầu
+  
   function unlockAudio() {
     userInteracted = true;
     document.removeEventListener("click", unlockAudio);
@@ -409,7 +408,7 @@ document.addEventListener("DOMContentLoaded", () => {
           if (unread > 0 && unread !== lastUnreadCounts[chatId]) {
             lastUnreadCounts[chatId] = unread;
 
-            // Chỉ phát nếu chat là chat riêng + không phải chat đang mở
+
             if (!item.classList.contains("active") && await shouldPlayForChat(chatId)) {
               try {
                 sound.pause();
@@ -500,7 +499,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 
 <script>
-// Gắn sự kiện click cho nút đổi ảnh nền
+
 document.addEventListener("click", (e) => {
   if (e.target.closest("#change-bg-button")) {
     if (window.chat && typeof window.chat.showChangeChatBackgroundModal === "function") {
@@ -1645,6 +1644,7 @@ document.addEventListener("DOMContentLoaded", () => {
 </html>
 </body>
 </html>
+
 
 
 
