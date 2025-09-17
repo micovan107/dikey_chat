@@ -1,6 +1,5 @@
 /**
- * File chính khởi tạo ứng dụng
- */
+
 document.addEventListener('DOMContentLoaded', () => {
     // Thiết lập sự kiện đăng nhập
     document.getElementById('google-login').addEventListener('click', () => {
